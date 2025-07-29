@@ -55,12 +55,14 @@
 #   Hide                            Hide the subsequent commands from the output
 #   Show                            Show the subsequent commands in the output
 
-Output demo.gif
+Output assets/demo.gif
 
 Require echo
 
 Set Shell "bash"
-# Set Theme Ubuntu
+Set Theme "Builtin Dark"
+Set Margin 0
+Set Padding 0
 Set FontSize 32
 Set Width 2200
 Set Height 1400
@@ -73,12 +75,15 @@ Show
 
 # main menu
 Sleep 5s
+Screenshot assets/main_menu.png
+
 
 # TODO get a good save state with laser cutter and load it
 
 # surface
 Enter
 Sleep 10s
+Screenshot assets/surface.png
 
 # manual demo
 #Type "c"
@@ -101,6 +106,7 @@ Sleep 200ms
 # documentation
 Enter
 Sleep 3s
+Screenshot assets/documentation.png
 Down
 Sleep 200ms
 Down
@@ -108,11 +114,12 @@ Sleep 3s
 Escape
 Sleep 200ms
 
-# main menu
+# tech tree 
 Down
 Sleep 200ms
 Enter
 Sleep 5s
+Screenshot assets/tech_tree.png
 Escape
 Sleep 200ms
 Escape

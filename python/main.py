@@ -10,6 +10,7 @@ from fabricator import Fabricator
 fab0 = Fabricator(3334, Point(125, 125))
 dog0 = Dog(3335)
 dog0.charge_location = Point(130, 127)
+dog0.scan()
 
 existing_agents = hud.get_existing_agents()
 print(existing_agents)

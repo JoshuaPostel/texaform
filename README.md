@@ -8,7 +8,7 @@
 
 <p align="center">
   <img src="/assets/main_menu.png" width="400" />
-  <img src="/assets/surface_close.png" width="400" />
+  <img src="/assets/surface.png" width="400" />
   <img src="/assets/tech_tree.png" width="400" />
   <img src="/assets/documentation.png" width="400" />
 </p>
