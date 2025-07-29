@@ -1,0 +1,3 @@
+# TODO remove when ship
+[env]
+RUST_BACKTRACE = "1"

@@ -1,0 +1,41 @@
+[package]
+name = "texaform"
+version = "0.1.0"
+authors = ["Joshua Postel"]
+edition = "2024"
+
+[dependencies]
+arboard = { version = "3.6.0", default-features = false }
+async-recursion = "1.1.1"
+bincode = "1.3.3"
+bytes = "1.10.1"
+chrono = "0.4.41"
+color-eyre = "0.6.3"
+crossterm = { version = "0.27.0", features = ["event-stream"] }
+directories = "5.0.1"
+erased-serde = "0.4.5"
+futures = "0.3.30"
+futures-util = "0.3.30"
+# maybe dont need this
+indoc = "2.0.5"
+lazy_static = "1.4.0"
+noise = "0.9.0"
+petgraph = { version = "0.6.5", features = ["serde-1"] }
+rand = "0.9.1"
+ratatui = { version = "0.28.1", features = ["macros", "serde", "unstable-widget-ref"] }
+rodio = "0.17.3"
+serde = { version = "1.0.200", features = ["derive"] }
+serde_json = "1.0.116"
+serde_with = "3.8.2"
+strum = "0.27.1"
+strum_macros = "0.27.1"
+tachyonfx = "0.5.0"
+thiserror = "2.0.12"
+tokio = { version = "1.46.1", features = ["full", "io-util"] }
+tokio-io = "0.1.13"
+# no longer using websockets
+#tokio-tungstenite = "0.21.0"
+tracing = "0.1.40"
+tracing-error = "0.2.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+typetag = "0.2.16"
