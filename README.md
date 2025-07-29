@@ -1,4 +1,4 @@
-<p align="center"><b>Notice:</b> Texaform is in a pre-alpha state.  Feedback is greatly appreciated.</p>
+<p align="center"><b>Notice:</b> Texaform is in a pre-alpha state.  <a href="https://github.com/JoshuaPostel/texaform/discussions/1">Feedback</a> is greatly appreciated.</p>
 
 <h1 align="center">TEXAFORM</h1>
 
