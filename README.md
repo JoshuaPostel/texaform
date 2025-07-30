@@ -17,7 +17,7 @@ Von Neumann probe 147 just landed on exoplanet TOI-1846 b.  Control agents on th
 
 ## To Run
 
-```
+```bash
 git clone git@github.com:JoshuaPostel/texaform.git
 cd texaform
 # requires rust 1.88
