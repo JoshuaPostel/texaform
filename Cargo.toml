@@ -3,6 +3,7 @@ name = "texaform"
 version = "0.1.0"
 authors = ["Joshua Postel"]
 edition = "2024"
+rust-version = "1.88"
 
 [dependencies]
 arboard = { version = "3.6.0", default-features = false }
