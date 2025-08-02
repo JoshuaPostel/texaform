@@ -78,10 +78,6 @@ x >x
 
 ## low priority
 - [ ] cargo: move from package/library to application/binary
-- [ ] keybord navigation for everything
-  - [ ] add [R] (or [T]?) for technology shortcut
-  - [ ] controls pause menu item?
-  - [ ] tab based "focus" between areas (highlight focused area)?
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
 - [ ] clean up UI
   - [ ] when agent selected it is displayed twice (agent log and info)
@@ -103,6 +99,9 @@ x >x
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
 - [ ] remove either `color_eyre` or `anyhow`
+- [x] keybord navigation for everything
+  - [x] add [R] (or [T]?) for technology shortcut
+  - [x] controls pause menu item?
 
 ## Future
 - [ ] fog of war
