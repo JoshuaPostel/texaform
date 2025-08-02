@@ -21,7 +21,7 @@ use crate::agents::smelter::Smelter;
 use crate::entities::shape::Shape;
 
 use crate::surface::grid::{Gent, Grid};
-use crate::surface::{AddEntityError, Focus, GameState, GameStats, Power, Surface, GRID_SIZE};
+use crate::surface::{AddEntityError, Focus, GRID_SIZE, GameState, GameStats, Power, Surface};
 
 use ratatui::layout::Position;
 

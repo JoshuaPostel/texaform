@@ -114,9 +114,7 @@ pub fn render_save_file_metadata(app: &App, frame: &mut Frame) {
             let playtime = human_readable_tick_count(state.game_stats.tick_count);
             let tech_count = state.game_state.tech_tree.graph.raw_nodes().iter().count();
             let unlocked = state.game_state.tech_tree.unlocked_count();
-            format!(
-                "playtime: {playtime}\ntechnology: {unlocked}/{tech_count}"
-            )
+            format!("playtime: {playtime}\ntechnology: {unlocked}/{tech_count}")
         }
         LoadingState::Loading => "loading...".to_string(),
         LoadingState::Failed(error) => {

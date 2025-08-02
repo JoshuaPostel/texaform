@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 use ratatui::buffer::Buffer;
 use ratatui::widgets::{Block, BorderType, Paragraph, WidgetRef, Wrap};
 
-
-
 // TODO should remove_content have this check?
 //fn remove_cost(buffer: &mut Buffer, cost: &Cost) {
 //    if contains_cost(buffer, cost) {
@@ -165,10 +163,10 @@ impl EntityContainer {
         for (prop, count) in to_remove.iter() {
             for _ in 0..*count {
                 self.remove_entity(prop)?;
-//                let idx = self.content.iter().position(|p| p == prop).ok_or(())?;
-//                self.content_chars.remove(idx);
-//                self.content_chars.push(' ');
-//                self.content.remove(idx);
+                //                let idx = self.content.iter().position(|p| p == prop).ok_or(())?;
+                //                self.content_chars.remove(idx);
+                //                self.content_chars.push(' ');
+                //                self.content.remove(idx);
             }
         }
         Ok(())

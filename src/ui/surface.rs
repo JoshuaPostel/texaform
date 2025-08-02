@@ -9,10 +9,10 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
-use crate::{draw::rectangle::draw_rectangle, entities::Properties};
 use crate::utils::human_readable_tick_count;
 use crate::{agents::Comms, theme::DEFAULT_STYLE};
 use crate::{draw::PubCell, surface::tutorial::Tutorial};
+use crate::{draw::rectangle::draw_rectangle, entities::Properties};
 
 use ratatui::prelude::*;
 
@@ -164,7 +164,6 @@ impl From<Rect> for TutorialLayout {
     }
 }
 
-
 fn render_agent_log(app: &App, frame: &mut Frame) {
     let agent_layout = &app.layout.surface.agent;
     let height = agent_layout.log.height as usize;
@@ -202,7 +201,7 @@ fn render_agent_log(app: &App, frame: &mut Frame) {
                 if let Some(text_box_rect) = agent_layout.text_box {
                     let (color, append, shortcut) = match app.input_mode {
                         InputMode::Normal => (Color::Red, "", "[C]"),
-                        InputMode::Editing => (Color::Green, "█", "[CTRL + C]"),
+                        InputMode::Editing => (Color::Green, "█", "[ESC]"),
                     };
                     let text_box =
                         Paragraph::new("> ".to_string() + comms.text_box.input.as_str() + append)
@@ -415,7 +414,8 @@ fn render_power(app: &App, frame: &mut Frame) {
     let old = Paragraph::new(format!(
         "+ {}j - {}j = {}j",
         power.generation, power.consumption, net_power
-    )).alignment(Alignment::Center)
+    ))
+    .alignment(Alignment::Center)
     .block(Block::bordered().title("Power").style(DEFAULT_STYLE))
     .style(Style::default().fg(Color::Green).bg(Color::Black));
     let percent =
@@ -477,11 +477,11 @@ fn render_tutorial(app: &App, frame: &mut Frame) {
 
     let old = Paragraph::new(tutorial_state.instructions())
         .wrap(Wrap { trim: false })
-        .block(
-            Block::bordered()
-                .title("Tutorial")
-                .title(format!("{}/{}", tutorial_state.progress(), Tutorial::iter().count() - 2)),
-        )
+        .block(Block::bordered().title("Tutorial").title(format!(
+            "{}/{}",
+            tutorial_state.progress(),
+            Tutorial::iter().count() - 2
+        )))
         .style(DEFAULT_STYLE);
 
     render_widget_clamped(frame, old, app.layout.surface.tutorial.area);
@@ -510,9 +510,11 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     }
 
     let (name, guage) = current_research_content(app);
+    let left = Title::from(format!("Researching: {name}"));
+    let right = Title::from("[T]").alignment(Alignment::Right);
     let tech = app
         .current_research_button
-        .with_content_and_title(guage, format!("Researching: {name}"));
+        .with_content_and_title(guage, vec![left, right]);
     render_widget_clamped(frame, tech, app.layout.surface.tech);
 
     render_widget_clamped(

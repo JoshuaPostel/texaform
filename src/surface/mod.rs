@@ -31,8 +31,8 @@ use serde_with::serde_as;
 pub mod generation;
 pub mod grid;
 pub mod tutorial;
-use crate::surface::tutorial::Tutorial;
 use crate::surface::grid::{Gent, Grid};
+use crate::surface::tutorial::Tutorial;
 
 //const GRID_SIZE: usize = 1000;
 const GRID_SIZE: usize = 250;
@@ -823,7 +823,6 @@ impl Surface {
         surface
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameStats {

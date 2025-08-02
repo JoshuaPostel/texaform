@@ -1,4 +1,5 @@
 use crate::event::Event;
+use bytes::BytesMut;
 use color_eyre::eyre;
 use std::fmt::Display;
 use std::str;
@@ -7,7 +8,6 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::mpsc::error::TryRecvError;
-use bytes::BytesMut;
 
 use async_recursion::async_recursion;
 use tracing::*;
@@ -108,13 +108,13 @@ pub async fn handle_socket<R: Display + Send>(
             } else if Some(&59) == buf.last() {
                 let msg = str::from_utf8(&buf[..buf.len() - 1])?;
                 info!("msg: {msg}");
-                break msg
+                break msg;
             } else {
                 info!("else branch");
                 continue;
             }
         };
-        // TODO: move write section to its own fuction 
+        // TODO: move write section to its own fuction
         let reply = Event::AgentCommand(port, msg.to_string());
         info!("agent reply: {reply:?}");
         event_sender.send(reply)?;

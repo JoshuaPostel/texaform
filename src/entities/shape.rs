@@ -43,7 +43,6 @@ O...........O
 O...........O
 ";
 
-
 pub const STATOR: &str = "
 ....OOOOOOOOO....
 ..OO  OOOOO  OO..

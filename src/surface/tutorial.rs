@@ -1,5 +1,5 @@
-use strum::IntoEnumIterator;
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, strum_macros::EnumIter)]
 pub enum Tutorial {
@@ -34,9 +34,10 @@ impl Tutorial {
     }
 
     pub fn previous(&mut self) {
-        if let Some(n) = self.progress().checked_sub(1) &&
-            let Some(state) = Tutorial::iter().nth(n) {
-                *self = state;
+        if let Some(n) = self.progress().checked_sub(1)
+            && let Some(state) = Tutorial::iter().nth(n)
+        {
+            *self = state;
         }
     }
 
@@ -82,4 +83,3 @@ this is left as an exercise for the reader".to_string()
         }
     }
 }
-

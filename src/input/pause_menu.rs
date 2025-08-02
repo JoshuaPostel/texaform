@@ -10,7 +10,7 @@ fn on_select(app: &mut App) {
         PauseMenu::Continue => app.set_screen(Screen::Surface),
         PauseMenu::SaveGame => app.set_screen(Screen::SaveGame),
         PauseMenu::Documentation => app.set_screen(Screen::Documentation),
-        PauseMenu::TechTree => app.set_screen(Screen::TechTree),
+        PauseMenu::TechnologyTree => app.set_screen(Screen::TechTree),
         PauseMenu::Settings => app.set_screen(Screen::Settings),
         PauseMenu::MainMenu => app.set_screen(Screen::MainMenu),
     }
@@ -22,6 +22,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         KeyCode::Up | KeyCode::Char('k') => app.pause_menu.select_previous(),
         KeyCode::Down | KeyCode::Char('j') => app.pause_menu.select_next(),
         KeyCode::Enter => on_select(app),
+        KeyCode::Char('D') | KeyCode::Char('d') => {
+            app.set_screen(Screen::Documentation);
+        }
+        KeyCode::Char('T') | KeyCode::Char('t') => {
+            app.set_screen(Screen::TechTree);
+        }
         _ => {}
     }
     Ok(())
