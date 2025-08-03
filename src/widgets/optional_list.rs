@@ -23,9 +23,12 @@ pub struct OptionalTextList<T: Display + Debug> {
 }
 
 impl<T: Display + Debug> OptionalTextList<T> {
-    pub fn new(items: Vec<T>, style: Style, selected_style: Style,
+    pub fn new(
+        items: Vec<T>,
+        style: Style,
+        selected_style: Style,
         hovered_style: Style,
-        ) -> OptionalTextList<T> {
+    ) -> OptionalTextList<T> {
         let mut lines: Vec<Line<'static>> = items
             .iter()
             .map(|i| Line::from(i.to_string()).style(style))

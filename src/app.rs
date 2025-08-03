@@ -11,9 +11,7 @@ use crate::ui::documentation::Document;
 use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
 use crate::ui::{AppLayout, Screen};
-use crate::widgets::button::{
-    BorderAttachedButton, Button, Location, TextButton,
-};
+use crate::widgets::button::{BorderAttachedButton, Button, Location, TextButton};
 use crate::widgets::list::TextList;
 use crate::widgets::optional_list::OptionalTextList;
 use crate::widgets::text_box::TextBox;
@@ -150,13 +148,9 @@ impl std::fmt::Display for DisplayPathBuf {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(event_sender: UnboundedSender<Event>, width: u16, height: u16) -> Self {
-        let p = Paragraph::new("Menu [ESC]").centered();
+        let p = Paragraph::new("Menu [M]").centered();
         let pause_menu_button = Button::new(p);
         let current_research_button = Button::new(Gauge::default());
-//        let tutorial_previous_button = TextButton::new("<[P] PREV┝");
-//        let tutorial_next_button = TextButton::new("┥NEXT [N]>");
-//        let tutorial_previous_button = TextButton::new("<PREV [P]┝");
-//        let tutorial_next_button = TextButton::new("┥[N] NEXT>");
         let tutorial_previous_button = TextButton::new("<PREV [P]");
         let tutorial_next_button = TextButton::new("[N] NEXT>");
         let copy_button =
@@ -210,7 +204,6 @@ impl App {
             save_button: Button::new(Paragraph::default().centered()),
             screen: Screen::default(),
             previous_screen: Screen::default(),
-            //previous_screen_button: PreviousScreenButton::new(&Screen::default()),
             previous_screen_button,
             layout: AppLayout::default(),
             tech_tree_double_click_tracker: DoubleClickTracker::default(),
@@ -259,7 +252,8 @@ impl App {
 
     pub fn set_screen(&mut self, screen: Screen) {
         self.previous_screen = self.screen;
-        self.previous_screen_button.update(format!("↻  {} [ESC]", self.previous_screen));
+        self.previous_screen_button
+            .update(format!("↻  {} [ESC]", self.previous_screen));
         self.layout.previous_screen_button = self
             .previous_screen_button
             .resize(self.layout.width, self.layout.height);

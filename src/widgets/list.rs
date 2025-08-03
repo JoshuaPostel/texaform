@@ -1,58 +1,135 @@
-use crossterm::event::MouseEvent;
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Position, Rect};
-use ratatui::style::{Color, Style};
-use ratatui::text::Line;
-use ratatui::widgets::Widget;
+use ratatui::layout::{Alignment, Position, Rect};
+use ratatui::style::{Color, Style, Styled, Stylize};
+use ratatui::text::{Line, Span, ToSpan};
+use ratatui::widgets::{Widget, WidgetRef};
 use std::fmt::{Debug, Display};
+
+
+#[derive(Default, Debug, Clone)]
+pub struct AlignedLine {
+    left: Option<String>,
+    center: Option<String>,
+    right: Option<String>,
+    style: Style,
+}
+
+impl Widget for AlignedLine {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(left) = self.left {
+            Line::from(left)
+                .alignment(Alignment::Left)
+                .render(area, buf);
+        }
+        if let Some(center) = self.center {
+            Line::from(center)
+                .alignment(Alignment::Center)
+                .render(area, buf);
+        }
+        if let Some(right) = self.right {
+            Line::from(right)
+                .alignment(Alignment::Right)
+                .render(area, buf);
+        }
+        buf.set_style(area, self.style);
+    }
+}
+
+impl WidgetRef for AlignedLine {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        if let Some(left) = &self.left {
+            Line::from(left.as_str())
+                .alignment(Alignment::Left)
+                .render_ref(area, buf);
+        }
+        if let Some(center) = &self.center {
+            Line::from(center.as_str())
+                .alignment(Alignment::Center)
+                .render_ref(area, buf);
+        }
+        if let Some(right) = &self.right {
+            Line::from(right.as_str())
+                .alignment(Alignment::Right)
+                .render_ref(area, buf);
+        }
+        buf.set_style(area, self.style);
+    }
+}
+
+impl From<String> for AlignedLine {
+    fn from(s: String) -> AlignedLine {
+        AlignedLine {
+            left: Some(s),
+            ..Default::default()
+        }
+    }
+}
+
+impl AlignedLine {
+    pub fn left_right(l: String, r: String) -> AlignedLine {
+        AlignedLine {
+            left: Some(l),
+            right: Some(r),
+            ..Default::default()
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct TextList<T: Display + Debug> {
     pub items: Vec<T>,
-    lines: Vec<Line<'static>>,
-    //lines: Vec<String>,
+    lines: Vec<AlignedLine>,
     // TODO
     // for now assuming everything can fit
     _offset: usize,
     selected: usize,
-    hovered: Option<usize>,
+    // TODO
     //selected: Option<usize>,
-    //state: ListState,
+    hovered: Option<usize>,
     style: Style,
     selected_style: Style,
     hovered_style: Style,
 }
 
 impl<T: Display + Debug> TextList<T> {
-    pub fn new(
-        items: Vec<T>,
-        style: Style,
-        selected_style: Style,
-        hovered_style: Style,
-    ) -> TextList<T> {
-        let mut lines: Vec<Line<'static>> = items
+    pub fn default_style(items: Vec<T>) -> TextList<T> {
+        let style = Style::new().fg(Color::Green).bg(Color::Black);
+        let selected_style = Style::new().fg(Color::Black).bg(Color::Green);
+        let hovered_style = Style::new().fg(Color::Black).bg(Color::DarkGray);
+        let lines = items
             .iter()
-            .map(|i| Line::from(i.to_string()).style(style))
+            .map(|i| AlignedLine::from(i.to_string()))
             .collect();
-        lines[0].style = selected_style;
-        TextList {
+        let mut test_list = TextList {
             items,
             lines,
-            //strings
             _offset: 0,
             selected: 0,
             hovered: None,
             style,
             selected_style,
             hovered_style,
-        }
+        };
+        test_list.lines[0].style = selected_style;
+        test_list
     }
 
-    pub fn default_style(items: Vec<T>) -> TextList<T> {
+    pub fn default_style_with_lines(items: Vec<T>, lines: Vec<AlignedLine>) -> TextList<T> {
         let style = Style::new().fg(Color::Green).bg(Color::Black);
         let selected_style = Style::new().fg(Color::Black).bg(Color::Green);
         let hovered_style = Style::new().fg(Color::Black).bg(Color::DarkGray);
-        TextList::new(items, style, selected_style, hovered_style)
+        let mut test_list = TextList {
+            items,
+            lines,
+            _offset: 0,
+            selected: 0,
+            hovered: None,
+            style,
+            selected_style,
+            hovered_style,
+        };
+        test_list.lines[0].style = selected_style;
+        test_list
     }
 
     pub fn select_previous(&mut self) {
@@ -82,7 +159,6 @@ impl<T: Display + Debug> TextList<T> {
             && idx < self.items.len()
         {
             let hovered_idx = idx.min(self.items.len() - 1);
-            self.hovered = Some(hovered_idx);
             self.lines[hovered_idx].style = self.hovered_style;
         } else {
             self.hovered = None;
@@ -108,7 +184,9 @@ impl<T: Display + Debug> Widget for TextList<T> {
                 width: area.width,
                 height: 1,
             };
-            line.render(line_area, buf);
+            // TODO AlignedLine with owned string instead?
+            //line.render(line_area, buf);
+            line.clone().render(line_area, buf);
         }
     }
 }

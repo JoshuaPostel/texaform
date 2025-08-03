@@ -66,11 +66,7 @@ impl Default for Tech {
 }
 
 impl Tech {
-    pub fn new(
-        kind: TechKind,
-        cost: HashMap<Properties, u8>,
-        unlocks: Option<Properties>,
-    ) -> Tech {
+    pub fn new(kind: TechKind, cost: HashMap<Properties, u8>, unlocks: Option<Properties>) -> Tech {
         Tech {
             kind,
             cost,
@@ -111,7 +107,6 @@ impl std::fmt::Display for TechStatus {
 }
 
 impl TechTree {
-
     fn everything_unlocked(&self) -> bool {
         self.graph
             .raw_nodes()

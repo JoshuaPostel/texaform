@@ -178,7 +178,6 @@ impl Drop for DropHandle {
     }
 }
 
-
 // write only ring buffer
 #[derive(Debug)]
 pub struct CommLogs {

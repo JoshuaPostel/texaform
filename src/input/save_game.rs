@@ -88,7 +88,6 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                 app.save_files.hover(Some(idx as usize));
             } else {
                 app.save_files.hover(None);
-
             }
         }
         Kind::Down(MouseButton::Left) => {

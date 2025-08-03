@@ -28,8 +28,7 @@ impl Hud {
             "STAT POWR" => Ok(Command::STAT_POWR),
             x if x.starts_with("RESR") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Ok(tech_kind) = TechKind::from_str(kind)
-                {
+                if let Ok(tech_kind) = TechKind::from_str(kind) {
                     Ok(Command::RESR(tech_kind))
                 } else {
                     Err(format!("unknown research {kind}"))

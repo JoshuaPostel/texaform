@@ -26,7 +26,6 @@ pub fn contains_entity(buffer: &Buffer, entity: &Properties) -> bool {
     buffer.iter().any(|p| p == entity)
 }
 
-
 pub struct PickResult {
     pub picked: Option<Properties>,
     pub replace: Option<Gent>,

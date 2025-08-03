@@ -2,15 +2,14 @@ use ratatui::{
     buffer::Buffer,
     layout::{Margin, Rect},
     style::{Color, Style, Styled},
-    widgets::{Block, BorderType, Paragraph, Widget},
     text::Line,
+    widgets::{Block, BorderType, Paragraph, Widget, block::Title},
 };
 
 #[derive(Debug, Clone)]
 pub struct Button<W: Widget + Styled> {
     pub content: W,
-    // TODO how to do a title while retaining Copy?
-    pub title: Option<String>,
+    pub titles: Vec<Title<'static>>,
     pub is_pressed: bool,
     pub is_hovered: bool,
     pub style: Style,
@@ -22,7 +21,7 @@ impl<W: Widget + Styled> Button<W> {
     pub fn new(content: W) -> Button<W> {
         Button {
             content,
-            title: None,
+            titles: vec![],
             is_pressed: false,
             is_hovered: false,
             style: Style::new().bg(Color::Black).fg(Color::Green),
@@ -34,14 +33,14 @@ impl<W: Widget + Styled> Button<W> {
     pub fn with_content(&self, content: W) -> Button<W> {
         Button {
             content,
-            title: self.title.clone(),
+            titles: self.titles.clone(),
             ..*self
         }
     }
 
-    pub fn with_content_and_title(&self, content: W, title: String) -> Button<W> {
+    pub fn with_content_and_title(&self, content: W, titles: Vec<Title<'static>>) -> Button<W> {
         Button {
-            title: Some(title),
+            titles,
             content,
             ..*self
         }
@@ -60,14 +59,11 @@ impl<W: Widget + Styled> Widget for Button<W> {
             .border_type(BorderType::Thick)
             .border_style(Style::default().bg(Color::Black))
             .style(style);
-        if let Some(title) = self.title {
-            block = block.title(title);
+        for title in self.titles {
+            block = block.title(title)
         }
         block.render(area, buf);
         let inner = area.inner(Margin::new(1, 1));
-        // TODO why not like this? open a discussion?
-        //let foo = self.content.set_style(style);
-        //foo.render(inner, buf);
         self.content.render(inner, buf);
         buf.set_style(inner, style)
     }
@@ -107,8 +103,7 @@ impl Widget for TextButton {
             (false, true) => self.hovered_style,
             _ => self.style,
         };
-        Line::from(self.content) 
-            .style(style).render(area, buf);
+        Line::from(self.content).style(style).render(area, buf);
     }
 }
 
@@ -134,21 +129,17 @@ impl BorderAttachedButton {
 
     pub fn resize(&self, width: u16, height: u16) -> Rect {
         match self.attached_direction {
-            Location::SouthEast => {
-                Rect {
-                    x: width - (self.n_chars + 2),
-                    y: height - 3,
-                    width: self.n_chars + 2,
-                    height: 3,
-                }
+            Location::SouthEast => Rect {
+                x: width - (self.n_chars + 2),
+                y: height - 3,
+                width: self.n_chars + 2,
+                height: 3,
             },
-            Location::East(i) => {
-                Rect {
-                    x: width - (self.n_chars + 2),
-                    y: ((height as i16) - i) as u16,
-                    width: self.n_chars + 2,
-                    height: 3,
-                }
+            Location::East(i) => Rect {
+                x: width - (self.n_chars + 2),
+                y: ((height as i16) - i) as u16,
+                width: self.n_chars + 2,
+                height: 3,
             },
         }
     }
@@ -159,14 +150,18 @@ impl BorderAttachedButton {
 
         let button = Button {
             content,
-            title: None,
+            titles: vec![],
             is_pressed: false,
             is_hovered: false,
             style: Style::new().bg(Color::Black).fg(Color::Green),
             pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
             hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
         };
-        BorderAttachedButton { button,attached_direction, n_chars }
+        BorderAttachedButton {
+            button,
+            attached_direction,
+            n_chars,
+        }
     }
 }
 
@@ -179,13 +174,13 @@ impl Widget for BorderAttachedButton {
                 cell.set_char('┪');
                 let cell = &mut buf[(area.right() - 1, area.bottom() - 1)];
                 cell.set_char('┩');
-            },
+            }
             Location::SouthEast => {
                 let cell = &mut buf[(area.right() - 1, area.top())];
                 cell.set_char('┪');
                 let cell = &mut buf[(area.left(), area.bottom() - 1)];
                 cell.set_char('┺');
-            },
+            }
         }
         // Not sure why adding whitespace to button.content does not do this for us
         // possibly a ratatui optimization leading to a "bug" or unexpected behavior?

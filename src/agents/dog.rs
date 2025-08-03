@@ -276,11 +276,11 @@ impl Dog {
                         Some(_) => {
                             self.payload.place(first_prop);
                             UpdateEnum::reply(Reply::ERRR("cannot drop here".to_string()))
-                        },
+                        }
                         None => {
                             self.payload.place(first_prop);
                             UpdateEnum::reply(Reply::ERRR("out of bounds".to_string()))
-                        },
+                        }
                     }
                 } else {
                     UpdateEnum::reply(Reply::ERRR("payload is empty".to_string()))
@@ -488,8 +488,7 @@ impl Dog {
             x if x.starts_with("PICK") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
                 //let kind = split.nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind)
-                {
+                if let Some(prop) = Properties::from_user_input(kind) {
                     Ok(Command::PICK(prop))
                 } else {
                     Err(format!("unknown entity {kind}"))

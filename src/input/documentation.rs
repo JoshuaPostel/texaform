@@ -1,8 +1,8 @@
 use crate::app::{App, AppResult};
+use arboard::Clipboard;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 use tachyonfx::Shader;
-use arboard::Clipboard;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     match key_event.code {
@@ -76,7 +76,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                 let mut clipboard = Clipboard::new().expect("can access clipboard");
                 let document = app.documentation.selected().document();
                 clipboard.set_text(document).expect("can set clipboard");
-            } 
+            }
         }
         _ => (),
     }

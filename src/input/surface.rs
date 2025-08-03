@@ -19,18 +19,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                 match key_event.code {
                     KeyCode::Esc => {
                         app.input_mode = InputMode::Normal;
-                        app.set_screen(Screen::PauseMenu);
                     }
                     KeyCode::Enter => {
                         app.surface.update_agent_manual(&port).await;
                     }
                     KeyCode::Char(to_insert) => {
-                        if key_event.modifiers == KeyModifiers::CONTROL
-                            && (to_insert == 'C' || to_insert == 'c')
-                        {
-                            app.input_mode = InputMode::Normal;
-                            return Ok(())
-                        }
                         if let Some(comms) = app.surface.agents.get_mut(&port) {
                             comms.text_box.enter_char(to_insert.to_ascii_uppercase());
                         } else {
@@ -64,11 +57,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         }
         InputMode::Normal => {
             match key_event.code {
-                KeyCode::Esc => {
-                    //app.surface.selected = None;
-                    //app.surface.focus = None;
-                    app.set_screen(Screen::PauseMenu);
-                }
                 // Counter handlers
                 KeyCode::Right => app.surface.move_right(1),
                 KeyCode::Left => app.surface.move_left(1),
@@ -78,6 +66,15 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                 KeyCode::Home => app.surface.move_left(10),
                 KeyCode::PageUp => app.surface.move_up(10),
                 KeyCode::PageDown => app.surface.move_down(10),
+                KeyCode::Char('D') | KeyCode::Char('d') => {
+                    app.set_screen(Screen::Documentation);
+                }
+                KeyCode::Char('M') | KeyCode::Char('m') => {
+                    app.set_screen(Screen::PauseMenu);
+                }
+                KeyCode::Char('T') | KeyCode::Char('t') => {
+                    app.set_screen(Screen::TechTree);
+                }
                 KeyCode::Char('C') | KeyCode::Char('c') => {
                     app.input_mode = InputMode::Editing;
                 }

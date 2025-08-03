@@ -11,8 +11,8 @@ use crate::surface::{GameState, Power};
 
 use serde::{Deserialize, Serialize};
 
-use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::widgets::WidgetRef;
 
 impl WidgetRef for Fabricator {
@@ -146,13 +146,12 @@ impl Fabricator {
         match msg {
             x if x.starts_with("MAKE") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind)
-                {
+                if let Some(prop) = Properties::from_user_input(kind) {
                     Ok(Command::MAKE(prop))
                 } else {
                     Err(format!("unknown entity {kind}"))
                 }
-            },
+            }
             "RESR" => Ok(Command::RESR),
             "STAT" => Ok(Command::STAT),
             _ => Err(format!("unknown command: {msg}")),

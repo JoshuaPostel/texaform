@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use strum_macros;
 
-use crate::entities::shape::{self, Shape};
-use crate::surface::Power;
+use crate::agents::Agent;
 use crate::agents::dog::Dog;
+use crate::agents::fabricator::Fabricator;
 use crate::agents::laser_cutter::LaserCutter;
 use crate::agents::smelter::Smelter;
-use crate::agents::fabricator::Fabricator;
-use crate::agents::Agent;
+use crate::entities::shape::{self, Shape};
+use crate::surface::Power;
 
 // seems like an enum to keep track of all entities
 #[derive(
@@ -136,7 +136,7 @@ impl Properties {
         if text.len() == 1 {
             for prop in Properties::iter() {
                 if &prop.character().to_string() == text {
-                    return Some(prop)
+                    return Some(prop);
                 }
             }
             None

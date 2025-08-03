@@ -1,5 +1,5 @@
-use ratatui::layout::Position;
 use crate::TICK_UPDATE_MILLS;
+use ratatui::layout::Position;
 
 pub fn human_readable_tick_count(tick_count: u64) -> String {
     let mills = tick_count * TICK_UPDATE_MILLS;

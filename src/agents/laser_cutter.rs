@@ -335,8 +335,7 @@ impl LaserCutter {
             "MVYN" => Ok(Command::MVYN),
             x if x.starts_with("LOAD") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind)
-                {
+                if let Some(prop) = Properties::from_user_input(kind) {
                     if prop.cuttable() {
                         Ok(Command::LOAD(prop))
                     } else {
@@ -345,11 +344,10 @@ impl LaserCutter {
                 } else {
                     Err(format!("unknown entity {kind}"))
                 }
-            },
+            }
             x if x.starts_with("PICK") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind)
-                {
+                if let Some(prop) = Properties::from_user_input(kind) {
                     if let Some(_) = prop.material_and_shape() {
                         Ok(Command::PICK(prop))
                     } else {
