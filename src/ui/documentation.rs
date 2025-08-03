@@ -36,14 +36,6 @@ impl DocumentationLayout {
             });
 
         let copy_button = app.copy_button.resize(width, height);
-        //        let copy_button = rect { //x: width - (self.n_chars + 2),
-        //            x: width - 21,
-        //            y: height - 6,
-        //            //width: self.n_chars + 2,
-        //            width: 21,
-        //            height: 3,
-        //        };
-
         DocumentationLayout {
             list: chunks[0],
             document: chunks[1],

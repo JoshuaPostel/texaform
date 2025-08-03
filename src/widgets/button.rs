@@ -62,15 +62,8 @@ impl<W: Widget + Styled> Widget for Button<W> {
         for title in self.titles {
             block = block.title(title)
         }
-
-        //        if let Some(title) = self.title {
-        //            block = block.title(title);
-        //        }
         block.render(area, buf);
         let inner = area.inner(Margin::new(1, 1));
-        // TODO why not like this? open a discussion?
-        //let foo = self.content.set_style(style);
-        //foo.render(inner, buf);
         self.content.render(inner, buf);
         buf.set_style(inner, style)
     }

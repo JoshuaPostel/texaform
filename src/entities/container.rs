@@ -32,11 +32,6 @@ impl WidgetRef for EntityContainer {
                 .iter()
                 .take(inner_area.saturating_sub(2))
                 .collect();
-            //            // TODO bug when content.len() close to inner_area.area()
-            //            let mut content: String = self.content.iter().map(|e| e.character()).collect();
-            //            while content.len() <= inner.area() as usize - 3 {
-            //                content.push(' ');
-            //            }
             content.push('.');
             content.push('.');
             content.push('.');
@@ -73,11 +68,6 @@ impl WidgetRef for EntityContainer {
             } else {
                 (height * inner.width as usize) - self.capacity
             };
-            //            let mut chars: Vec<char> = self.content.iter().map(|e| e.character()).collect();
-            //            let empty_space = self.capacity - chars.len();
-            //            for _ in 0..empty_space {
-            //                chars.push(' ');
-            //            }
             let mut chars = self.content_chars.clone();
             chars.extend(vec!['█'; fill_space]);
 
@@ -163,10 +153,6 @@ impl EntityContainer {
         for (prop, count) in to_remove.iter() {
             for _ in 0..*count {
                 self.remove_entity(prop)?;
-                //                let idx = self.content.iter().position(|p| p == prop).ok_or(())?;
-                //                self.content_chars.remove(idx);
-                //                self.content_chars.push(' ');
-                //                self.content.remove(idx);
             }
         }
         Ok(())
