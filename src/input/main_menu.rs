@@ -31,6 +31,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         KeyCode::Up | KeyCode::Char('k') => app.main_menu.select_previous(),
         KeyCode::Down | KeyCode::Char('j') => app.main_menu.select_next(),
         KeyCode::Enter => on_select(app).await?,
+        KeyCode::Char(x) => {
+            if let Some(digit) = x.to_digit(10) {
+                app.seed.append(digit as u64)
+            }
+        }
+        KeyCode::Delete | KeyCode::Backspace => app.seed.backspace(),
         _ => {}
     }
     Ok(())

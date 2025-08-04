@@ -1,12 +1,14 @@
+use ratatui::prelude::Alignment;
 use ratatui::{
     Frame,
     layout::{Constraint, Rect},
     style::{Color, Style},
-    widgets::Paragraph,
+    widgets::{Block, Borders, Paragraph, block::Title},
 };
 use strum::IntoEnumIterator;
 
 use crate::effects::Effects;
+use crate::surface::Seed;
 use crate::ui::{AppLayout, center, render_effect_clamped, render_widget_clamped};
 use crate::widgets::list::TextList;
 use crate::{app::App, widgets::list::AlignedLine};
@@ -16,6 +18,7 @@ use std::time::Duration;
 #[derive(Debug, Default)]
 pub struct MainMenuLayout {
     pub menu: Rect,
+    pub set_seed: Rect,
 }
 
 impl MainMenuLayout {
@@ -26,9 +29,15 @@ impl MainMenuLayout {
             width,
             height,
         };
-        MainMenuLayout {
-            menu: center(area, Constraint::Percentage(20), Constraint::Length(4)),
-        }
+        let menu = center(area, Constraint::Length(25), Constraint::Length(4));
+
+        let set_seed = Rect {
+            x: menu.x,
+            y: menu.bottom() + 2,
+            width: menu.width,
+            height: 3,
+        };
+        MainMenuLayout { menu, set_seed }
     }
 }
 
@@ -54,6 +63,21 @@ impl MainMenu {
     }
 }
 
+fn render_set_seed(app: &App, frame: &mut Frame) {
+    let content = match app.seed {
+        Seed::Manual(x) => format!("{x:0>6}"),
+        Seed::Random(_) => "Random".to_string(),
+    };
+    let seed_input = Paragraph::new(content).alignment(Alignment::Center).block(
+        Block::default()
+            .title("Set Seed")
+            .title(Title::from("[0-9, DEL]").alignment(Alignment::Right))
+            .borders(Borders::ALL),
+    );
+
+    render_widget_clamped(frame, seed_input, app.layout.main_menu.set_seed);
+}
+
 pub fn render(app: &App, frame: &mut Frame) {
     let logo = indoc::indoc! {"\n\n\n
         ░        ░░        ░░  ░░░░  ░░░      ░░░        ░░░      ░░░       ░░░  ░░░░  ░
@@ -62,12 +86,13 @@ pub fn render(app: &App, frame: &mut Frame) {
         ████  █████  █████████  ██  ███        ██  ████████  ████  ██  ███  ███  █  █  █
         ████  █████        ██  ████  ██  ████  ██  █████████      ███  ████  ██  ████  █
     "};
-    let paragraph = Paragraph::new(logo)
+    let logo = Paragraph::new(logo)
         .centered()
         .style(Style::default().fg(Color::Green).bg(Color::Black));
 
-    render_widget_clamped(frame, paragraph, app.layout.whole_screen());
+    render_widget_clamped(frame, logo, app.layout.whole_screen());
     render_widget_clamped(frame, app.main_menu.clone(), app.layout.main_menu.menu);
+    render_set_seed(app, frame);
 }
 
 pub fn render_fx(

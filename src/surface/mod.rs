@@ -14,6 +14,7 @@ use crate::agents::{Agent, Comms, UpdateEnum};
 use crate::app::AppResult;
 use crate::entities::Properties;
 use crate::event::Event;
+use crate::logging;
 use crate::tech_tree::Tech;
 use crate::tech_tree::TechTree;
 use crate::ui::render_effect_clamped;
@@ -838,13 +839,33 @@ impl Seed {
             Seed::Manual(x) => *x,
         }
     }
-     
+
     pub fn ui_string(&self) -> String {
         match self {
             Seed::Manual(x) => format!("Seeded: {x}"),
             Seed::Random(x) => format!("Random Seed: {x}"),
         }
+    }
 
+    pub fn append(&mut self, digit: u64) {
+        let value = match self {
+            Seed::Random(_) => 0,
+            Seed::Manual(x) => *x,
+        };
+        // ensure max seed of 999_999
+        if value < 100_000 {
+            *self = Seed::Manual((value * 10) + digit);
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        if let Seed::Manual(value) = self {
+            if 10 < *value {
+                *self = Seed::Manual(*value / 10);
+            } else {
+                *self = Seed::default()
+            }
+        }
     }
 }
 
@@ -855,7 +876,6 @@ impl Default for Seed {
         Seed::Random(seed)
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameStats {

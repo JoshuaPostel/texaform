@@ -55,6 +55,7 @@ x >x
 ```
 
 ## playthrough missing features
+- [ ] add [C] and [ESC] to `load_game` text box
 - [ ] something fun when victory researched
   - [x] show victory screen or popup with run stats
     - [x] add command counter

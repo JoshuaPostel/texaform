@@ -5,7 +5,6 @@ use ratatui::text::{Line, Span, ToSpan};
 use ratatui::widgets::{Widget, WidgetRef};
 use std::fmt::{Debug, Display};
 
-
 #[derive(Default, Debug, Clone)]
 pub struct AlignedLine {
     left: Option<String>,

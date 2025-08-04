@@ -6,7 +6,7 @@ use tokio::fs::metadata;
 use crate::effects::Effects;
 use crate::event::Event;
 use crate::input::DoubleClickTracker;
-use crate::surface::{self, Surface, SurfaceState, Seed};
+use crate::surface::{self, Seed, Surface, SurfaceState};
 use crate::ui::documentation::Document;
 use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
@@ -22,8 +22,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use chrono::{DateTime, Local};
-use tokio::sync::mpsc::UnboundedSender;
 use rand::Rng;
+use tokio::sync::mpsc::UnboundedSender;
 
 // TODO remove in favor of top level Result<(), anyhow::Error> to avoid fat pointer
 /// Application result type.
@@ -166,7 +166,6 @@ impl App {
 
         let list = Document::VARIANTS.to_vec();
         let documentation = TextList::default_style(list);
-
 
         let seed = Seed::default();
 

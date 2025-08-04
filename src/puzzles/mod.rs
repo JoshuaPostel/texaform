@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 
 mod count_groups;
 
