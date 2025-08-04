@@ -12,7 +12,8 @@ async fn on_select(app: &mut App) -> Result<(), AddEntityError> {
         MainMenu::NewGame => {
             //app.surface = surface::generation::sparse_xs(app.event_sender.clone());
             //app.surface = surface::generation::perlin(app.event_sender.clone());
-            app.surface = surface::generation::manual(app.event_sender.clone()).await;
+            app.surface =
+                surface::generation::manual(app.event_sender.clone(), app.seed.value()).await;
             //surface::generation::init_some_agents(&mut app.surface).await?;
             //surface::generation::init_starting_agent(&mut app.surface).await?;
             surface::generation::init_starting_entities(&mut app.surface).await?;

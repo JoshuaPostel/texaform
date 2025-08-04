@@ -1,4 +1,5 @@
 use rand::Rng;
+use rand::RngCore;
 use ratatui::layout::Position;
 use std::collections::HashSet;
 
@@ -168,9 +169,8 @@ impl Shape {
     }
 
     // TODO: make deterministic with seed
-    pub fn jitter_edge(&mut self) {
+    pub fn jitter_edge(&mut self, rng: &mut impl RngCore) {
         let edge = self.edge();
-        let mut rng = rand::rng();
         for pos in edge {
             if rng.random::<f64>() > 0.5 {
                 self.positions.remove(&pos);
@@ -178,16 +178,15 @@ impl Shape {
         }
     }
 
-    pub fn jittered_circle(radius: u16, iters: u16) -> Shape {
+    pub fn jittered_circle(rng: &mut impl RngCore, radius: u16, iters: u16) -> Shape {
         let mut shape = Shape::circle(radius);
         for _ in 0..iters + 1 {
-            shape.jitter_edge();
+            shape.jitter_edge(rng);
         }
         shape
     }
 
-    pub fn wave(length: u16, bend_chance: f64, horizontal: bool) -> Shape {
-        let mut rng = rand::rng();
+    pub fn wave(rng: &mut impl RngCore, length: u16, bend_chance: f64, horizontal: bool) -> Shape {
         let mut positions = HashSet::new();
         if horizontal {
             let mut y = length;
@@ -218,18 +217,23 @@ impl Shape {
         shape.normalize()
     }
 
-    pub fn waffle_fry(length: u16, bend_chance: f64, horizontal: bool) -> Shape {
+    pub fn waffle_fry(
+        rng: &mut impl RngCore,
+        length: u16,
+        bend_chance: f64,
+        horizontal: bool,
+    ) -> Shape {
         let (w1, w2, w3) = if horizontal {
             (
-                Shape::wave(length, bend_chance, horizontal).translate(1, 0),
-                Shape::wave(length + 2, bend_chance, horizontal).translate(0, 3),
-                Shape::wave(length, bend_chance, horizontal).translate(1, 6),
+                Shape::wave(rng, length, bend_chance, horizontal).translate(1, 0),
+                Shape::wave(rng, length + 2, bend_chance, horizontal).translate(0, 3),
+                Shape::wave(rng, length, bend_chance, horizontal).translate(1, 6),
             )
         } else {
             (
-                Shape::wave(length, bend_chance, horizontal).translate(0, 1),
-                Shape::wave(length + 2, bend_chance, horizontal).translate(3, 0),
-                Shape::wave(length, bend_chance, horizontal).translate(6, 1),
+                Shape::wave(rng, length, bend_chance, horizontal).translate(0, 1),
+                Shape::wave(rng, length + 2, bend_chance, horizontal).translate(3, 0),
+                Shape::wave(rng, length, bend_chance, horizontal).translate(6, 1),
             )
         };
         let mut positions = HashSet::new();

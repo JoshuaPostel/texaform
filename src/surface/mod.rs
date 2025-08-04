@@ -237,6 +237,7 @@ impl Surface {
                 *agent_count.entry(comms.entity.to_string()).or_insert(0) += 1;
             }
             self.victory_stats = Some(VictoryStats {
+                seed: self.game_stats.seed,
                 tick_count: self.game_stats.tick_count,
                 manual_command_count: self.game_stats.manual_command_count,
                 tcp_command_count: self.game_stats.tcp_command_count,
@@ -824,8 +825,41 @@ impl Surface {
     }
 }
 
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub enum Seed {
+    Random(u64),
+    Manual(u64),
+}
+
+impl Seed {
+    pub fn value(&self) -> u64 {
+        match self {
+            Seed::Random(x) => *x,
+            Seed::Manual(x) => *x,
+        }
+    }
+     
+    pub fn ui_string(&self) -> String {
+        match self {
+            Seed::Manual(x) => format!("Seeded: {x}"),
+            Seed::Random(x) => format!("Random Seed: {x}"),
+        }
+
+    }
+}
+
+impl Default for Seed {
+    fn default() -> Seed {
+        let mut rng = rand::rng();
+        let seed = rng.random_range(0..999_999);
+        Seed::Random(seed)
+    }
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameStats {
+    pub seed: Seed,
     pub tick_count: u64,
     pub manual_command_count: u64,
     pub tcp_command_count: u64,
@@ -835,6 +869,7 @@ pub struct GameStats {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct VictoryStats {
+    pub seed: Seed,
     pub tick_count: u64,
     pub manual_command_count: u64,
     pub tcp_command_count: u64,

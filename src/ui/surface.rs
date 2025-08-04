@@ -364,12 +364,13 @@ fn render_surface_overlay(app: &App, frame: &mut Frame) {
         let playtime = human_readable_tick_count(stats.tick_count);
         let total_agent_count: u64 = stats.agent_count.values().sum();
         let mut content = format!(
-            "playtime: {}\n\ntick_count: {}\n\nautomated commands: {}\n\n manual commands: {}\n\n total agents: {}\n\n",
+            "playtime: {}\n\ntick_count: {}\n\nautomated commands: {}\n\n manual commands: {}\n\n {}, total agents: {}\n\n",
             playtime,
             stats.tick_count,
             stats.manual_command_count,
             stats.tcp_command_count,
-            total_agent_count
+            stats.seed.ui_string(),
+            total_agent_count,
         );
         for (agent, count) in stats.agent_count.iter() {
             content += &format!("{agent}: {count}");

@@ -3,6 +3,8 @@ use std::collections::{BTreeMap, HashSet};
 use noise::utils::{NoiseMapBuilder, PlaneMapBuilder};
 use noise::{self};
 use rand::Rng;
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -56,8 +58,8 @@ fn insert_shape(
     unbuildable_idx.extend(footprint);
 }
 
-pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
-    let mut rng = rand::rng();
+pub async fn manual(event_sender: UnboundedSender<Event>, seed: u64) -> Surface {
+    let mut rng = ChaCha8Rng::seed_from_u64(seed);
     let mut grid: Vec<Gent> = vec![];
     for _ in 0..(GRID_SIZE * GRID_SIZE) {
         grid.push(Gent::Empty)
@@ -75,7 +77,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
         if rng.random::<f64>() > 0.997 {
             let radius = rng.random_range(4..7);
             let iters = rng.random_range(2..5);
-            let copper_vein = Shape::jittered_circle(radius, iters);
+            let copper_vein = Shape::jittered_circle(&mut rng, radius, iters);
             insert_shape(
                 copper_vein,
                 Properties::Copper,
@@ -91,7 +93,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
             let length = rng.random_range(4..10);
             let bend_chance = rng.random_range(0.4..0.6);
             let horizontal = rng.random::<bool>();
-            let wf = Shape::waffle_fry(length, bend_chance, horizontal).translate(0, 1);
+            let wf = Shape::waffle_fry(&mut rng, length, bend_chance, horizontal).translate(0, 1);
             insert_shape(wf, Properties::Silicate, &mut grid, idx, &mut unbuildable);
         }
     }

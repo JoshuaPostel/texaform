@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 pub struct CountGroups {
     data: Vec<char>,
@@ -61,14 +61,14 @@ pub const DESCRIPTION: &str = "Understand the composition of surface rocks by an
 ";
 
 impl CountGroups {
-    pub fn new() -> CountGroups {
+    pub fn new(rng: &mut impl RngCore) -> CountGroups {
         let oxide = '.';
         let iron = 'F';
         let mut data: Vec<char> = vec![];
         let size = 5;
         for _x in 0..size {
             for _y in 0..size {
-                if rand::rng().random_range(0..100) < 25 {
+                if rng.random_range(0..100) < 25 {
                     data.push(iron);
                 } else {
                     data.push(oxide);

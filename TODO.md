@@ -77,6 +77,8 @@ x >x
 - [ ] why is there a delay connecting to agents?
 
 ## low priority
+- [ ] use text list for agent list
+- [ ] unify text list and optional text list?
 - [ ] cargo: move from package/library to application/binary
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
 - [ ] clean up UI

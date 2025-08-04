@@ -6,7 +6,7 @@ use tokio::fs::metadata;
 use crate::effects::Effects;
 use crate::event::Event;
 use crate::input::DoubleClickTracker;
-use crate::surface::{self, Surface, SurfaceState};
+use crate::surface::{self, Surface, SurfaceState, Seed};
 use crate::ui::documentation::Document;
 use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
@@ -23,6 +23,7 @@ use std::time::Duration;
 
 use chrono::{DateTime, Local};
 use tokio::sync::mpsc::UnboundedSender;
+use rand::Rng;
 
 // TODO remove in favor of top level Result<(), anyhow::Error> to avoid fat pointer
 /// Application result type.
@@ -88,6 +89,7 @@ pub struct App {
     pub current_research_button: Button<Gauge<'static>>,
     pub tutorial_previous_button: TextButton,
     pub tutorial_next_button: TextButton,
+    pub seed: Seed,
 
     pub prev_tick: Duration,
     pub effects: Effects,
@@ -165,6 +167,9 @@ impl App {
         let list = Document::VARIANTS.to_vec();
         let documentation = TextList::default_style(list);
 
+
+        let seed = Seed::default();
+
         //let test_effect = fx::fade_to_fg(Color::Red, (3000, Interpolation::Linear));
         //let test_effect = fx::coalesce(500, (2000, Interpolation::Linear));
         //        let test_effect = fx::sweep_in(
@@ -185,6 +190,7 @@ impl App {
 
         let mut app = App {
             running: true,
+            seed,
             pause_menu_button,
             current_research_button,
             tutorial_previous_button,
