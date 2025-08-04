@@ -59,7 +59,10 @@ fn insert_shape(
 }
 
 pub async fn manual(event_sender: UnboundedSender<Event>, seed: u64) -> Surface {
+    tracing::info!("SEED: {seed}");
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
+    let val = rng.random::<f64>();
+    tracing::info!("rand test: {val}");
     let mut grid: Vec<Gent> = vec![];
     for _ in 0..(GRID_SIZE * GRID_SIZE) {
         grid.push(Gent::Empty)
