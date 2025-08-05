@@ -1,10 +1,9 @@
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Alignment, Position, Rect};
-use ratatui::style::{Color, Style, Styled, Stylize};
-use ratatui::text::{Line, Span, ToSpan};
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::Line;
 use ratatui::widgets::{Widget, WidgetRef};
 use std::fmt::{Debug, Display};
-
 
 #[derive(Default, Debug, Clone)]
 pub struct AlignedLine {

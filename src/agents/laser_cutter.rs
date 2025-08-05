@@ -1,8 +1,9 @@
 use crate::agents::{Agent, UpdateEnum};
 use crate::entities::shape::Shape;
 use crate::entities::{EntityContainer, PickResult, Properties};
+use crate::surface::Power;
 use crate::surface::grid::Grid;
-use crate::surface::{GameState, Power};
+use crate::surface::state::GameState;
 
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::Color;
@@ -12,8 +13,6 @@ use std::collections::HashSet;
 
 use ratatui::buffer::Buffer;
 use ratatui::widgets::{Paragraph, WidgetRef};
-
-use std::str::FromStr;
 
 use crate::utils::{idx_to_pos, pos_to_idx, xy_to_idx};
 

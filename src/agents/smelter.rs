@@ -1,7 +1,8 @@
 use crate::agents::{Agent, UpdateEnum};
 use crate::entities::{EntityContainer, PickResult, Properties};
+use crate::surface::Power;
 use crate::surface::grid::Grid;
-use crate::surface::{GameState, Power};
+use crate::surface::state::GameState;
 use crate::theme::DEFAULT_STYLE;
 
 use ratatui::buffer::Cell;

@@ -8,8 +8,9 @@ use crate::entities::PickResult;
 use crate::entities::Properties;
 use crate::event::Event;
 use crate::surface::Power;
+use crate::surface::Surface;
 use crate::surface::grid::Grid;
-use crate::surface::{GameState, Surface};
+use crate::surface::state::GameState;
 use crate::tcp::handle_socket;
 use crate::widgets::text_box::TextBox;
 

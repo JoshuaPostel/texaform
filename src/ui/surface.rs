@@ -1,18 +1,14 @@
-use std::str::FromStr;
-
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Position, Rect},
     style::{Color, Style},
     widgets::block::title::Title,
-    widgets::{Block, BorderType, Borders, Gauge, List, ListState, Paragraph, Sparkline, Wrap},
+    widgets::{Block, Borders, Gauge, List, ListState, Paragraph, Sparkline, Wrap},
 };
 use strum::IntoEnumIterator;
 
-use crate::utils::human_readable_tick_count;
-use crate::{agents::Comms, theme::DEFAULT_STYLE};
-use crate::{draw::PubCell, surface::tutorial::Tutorial};
-use crate::{draw::rectangle::draw_rectangle, entities::Properties};
+use crate::surface::tutorial::Tutorial;
+use crate::theme::DEFAULT_STYLE;
 
 use ratatui::prelude::*;
 
@@ -361,20 +357,7 @@ fn render_surface_overlay(app: &App, frame: &mut Frame) {
     if let Some(stats) = &app.surface.victory_stats
         && stats.show_victory
     {
-        let playtime = human_readable_tick_count(stats.tick_count);
-        let total_agent_count: u64 = stats.agent_count.values().sum();
-        let mut content = format!(
-            "playtime: {}\n\ntick_count: {}\n\nautomated commands: {}\n\n manual commands: {}\n\n total agents: {}\n\n",
-            playtime,
-            stats.tick_count,
-            stats.manual_command_count,
-            stats.tcp_command_count,
-            total_agent_count
-        );
-        for (agent, count) in stats.agent_count.iter() {
-            content += &format!("{agent}: {count}");
-        }
-        Paragraph::new(content)
+        Paragraph::new(stats.stats.to_string())
             .centered()
             .block(Block::bordered().title("!!! VICTORY !!!"))
             .style(DEFAULT_STYLE)

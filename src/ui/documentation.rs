@@ -4,7 +4,6 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Paragraph, Wrap},
 };
-use strum::VariantArray;
 use strum_macros;
 
 use crate::agents::{self, dog, fabricator, hud, laser_cutter, smelter};

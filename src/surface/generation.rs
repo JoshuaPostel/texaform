@@ -3,13 +3,15 @@ use std::collections::{BTreeMap, HashSet};
 use noise::utils::{NoiseMapBuilder, PlaneMapBuilder};
 use noise::{self};
 use rand::Rng;
+use rand::SeedableRng;
+use rand::distr::{Distribution, Uniform};
+use rand_chacha::ChaCha8Rng;
 
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::agents::Agent;
 use crate::entities::Properties;
 use crate::event::Event;
-use crate::tech_tree::TechTree;
 
 use crate::utils::{idx_to_pos, pos_to_idx};
 
@@ -19,9 +21,11 @@ use crate::agents::hud::Hud;
 use crate::agents::laser_cutter::LaserCutter;
 use crate::agents::smelter::Smelter;
 use crate::entities::shape::Shape;
+use crate::surface::Seed;
 
 use crate::surface::grid::{Gent, Grid};
-use crate::surface::{AddEntityError, Focus, GRID_SIZE, GameState, GameStats, Power, Surface};
+use crate::surface::state::GameState;
+use crate::surface::{AddEntityError, Focus, GRID_SIZE, Power, Surface};
 
 use ratatui::layout::Position;
 
@@ -56,8 +60,8 @@ fn insert_shape(
     unbuildable_idx.extend(footprint);
 }
 
-pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
-    let mut rng = rand::rng();
+pub async fn manual(event_sender: UnboundedSender<Event>, seed: Seed) -> Surface {
+    let mut rng = ChaCha8Rng::seed_from_u64(seed.value());
     let mut grid: Vec<Gent> = vec![];
     for _ in 0..(GRID_SIZE * GRID_SIZE) {
         grid.push(Gent::Empty)
@@ -71,11 +75,13 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
         unbuildable.insert(pos_to_idx(&pos, GRID_SIZE));
     }
 
+    let rand_radius = Uniform::new(4, 7).expect("valid range");
+    let rand_iters = Uniform::new(2, 5).expect("valid range");
     for idx in 0..(GRID_SIZE * GRID_SIZE) {
-        if rng.random::<f64>() > 0.997 {
-            let radius = rng.random_range(4..7);
-            let iters = rng.random_range(2..5);
-            let copper_vein = Shape::jittered_circle(radius, iters);
+        if rng.random::<f32>() < 0.003 {
+            let radius = rand_radius.sample(&mut rng);
+            let iters = rand_iters.sample(&mut rng);
+            let copper_vein = Shape::jittered_circle(&mut rng, radius, iters);
             insert_shape(
                 copper_vein,
                 Properties::Copper,
@@ -86,18 +92,20 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
         }
     }
 
+    let rand_length = Uniform::new(4, 10).expect("valid range");
+    let rand_bend_chance = Uniform::new(0.4, 0.6).expect("valid range");
     for idx in 0..(GRID_SIZE * GRID_SIZE) {
-        if rng.random::<f64>() > 0.998 {
-            let length = rng.random_range(4..10);
-            let bend_chance = rng.random_range(0.4..0.6);
-            let horizontal = rng.random::<bool>();
-            let wf = Shape::waffle_fry(length, bend_chance, horizontal).translate(0, 1);
+        if rng.random::<f32>() < 0.002 {
+            let length = rand_length.sample(&mut rng);
+            let bend_chance = rand_bend_chance.sample(&mut rng);
+            let horizontal = rng.random();
+            let wf = Shape::waffle_fry(&mut rng, length, bend_chance, horizontal).translate(0, 1);
             insert_shape(wf, Properties::Silicate, &mut grid, idx, &mut unbuildable);
         }
     }
 
     for idx in 0..(GRID_SIZE * GRID_SIZE) {
-        if rng.random::<f64>() > 0.995 {
+        if rng.random::<f32>() < 0.005 {
             insert_shape(
                 Shape::diamond(),
                 Properties::Sulfer,
@@ -109,7 +117,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
     }
 
     for idx in 0..(GRID_SIZE * GRID_SIZE) {
-        if rng.random::<f64>() > 0.90 && !unbuildable.contains(&idx) {
+        if rng.random::<f32>() < 0.1 && !unbuildable.contains(&idx) {
             grid[idx] = Gent::Intmd(Properties::Iron);
         }
     }
@@ -118,7 +126,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>) -> Surface {
 
     let x = (GRID_SIZE / 2) - 30;
     let y = (GRID_SIZE / 2) - 10;
-    Surface::new(grid, x, y, event_sender).await
+    Surface::new(grid, x, y, seed, event_sender).await
 }
 
 pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
@@ -157,21 +165,13 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
         }
     }
 
-    let grid = Grid::new(grid);
-    let game_state = GameState {
-        unlocked_entities: HashSet::new(),
-        tech_tree: TechTree::new(),
-        tutorial_state: Default::default(),
-    };
-
     Surface {
-        grid,
+        grid: Grid::new(grid),
         x: 0,
         y: 0,
         agents: BTreeMap::new(),
         event_sender,
-        game_state,
-        game_stats: GameStats::default(),
+        game_state: GameState::default(),
         victory_stats: None,
         power: Power::default(),
         effects: vec![],
@@ -181,22 +181,15 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
 }
 
 pub fn empty(event_sender: UnboundedSender<Event>) -> Surface {
-    let game_state = GameState {
-        unlocked_entities: HashSet::new(),
-        tech_tree: TechTree::new(),
-        tutorial_state: Default::default(),
-    };
     let grid: Vec<Gent> = vec![];
     let grid = Grid::new(grid);
-
     Surface {
         grid,
         x: 0,
         y: 0,
         agents: BTreeMap::new(),
         event_sender,
-        game_state,
-        game_stats: GameStats::default(),
+        game_state: GameState::default(),
         victory_stats: None,
         power: Power::default(),
         effects: vec![],

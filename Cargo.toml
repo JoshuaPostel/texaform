@@ -23,6 +23,7 @@ lazy_static = "1.4.0"
 noise = "0.9.0"
 petgraph = { version = "0.6.5", features = ["serde-1"] }
 rand = "0.9.1"
+rand_chacha = "0.9.0"
 ratatui = { version = "0.28.1", features = ["macros", "serde", "unstable-widget-ref"] }
 rodio = "0.17.3"
 serde = { version = "1.0.200", features = ["derive"] }

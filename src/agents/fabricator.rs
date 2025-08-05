@@ -1,13 +1,8 @@
-use std::str::FromStr;
-
-use crate::agents::dog::Dog;
-use crate::agents::laser_cutter::LaserCutter;
-use crate::agents::smelter::Smelter;
 use crate::agents::{Agent, UpdateEnum};
 use crate::entities::contains_cost;
 use crate::entities::{EntityContainer, PickResult, Properties};
 use crate::surface::grid::Grid;
-use crate::surface::{GameState, Power};
+use crate::surface::state::GameState;
 
 use serde::{Deserialize, Serialize};
 
@@ -96,7 +91,7 @@ impl Fabricator {
         &mut self,
         command: Command,
         _pos: &Position,
-        grid: &mut Grid,
+        _grid: &mut Grid,
         game_state: &mut GameState,
     ) -> UpdateEnum {
         match command {

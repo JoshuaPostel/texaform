@@ -8,9 +8,6 @@ use ratatui::{
 use crate::app::{App, LoadingState};
 use crate::ui::render_widget_clamped;
 
-use crate::TICK_UPDATE_MILLS;
-use crate::utils::human_readable_tick_count;
-
 #[derive(Debug, Default)]
 pub struct LoadGameLayout {
     pub save_files: Rect,
@@ -110,16 +107,9 @@ pub fn render_save_file_preview(app: &App, frame: &mut Frame) {
 
 pub fn render_save_file_metadata(app: &App, frame: &mut Frame) {
     let content = match app.loading_state() {
-        LoadingState::Loaded(state) => {
-            let playtime = human_readable_tick_count(state.game_stats.tick_count);
-            let tech_count = state.game_state.tech_tree.graph.raw_nodes().iter().count();
-            let unlocked = state.game_state.tech_tree.unlocked_count();
-            format!("playtime: {playtime}\ntechnology: {unlocked}/{tech_count}")
-        }
+        LoadingState::Loaded(state) => state.game_state.stats.to_string(),
         LoadingState::Loading => "loading...".to_string(),
-        LoadingState::Failed(error) => {
-            format!("failed to load:\n{error}")
-        }
+        LoadingState::Failed(error) => format!("failed to load:\n{error}"),
     };
 
     let paragraph = Paragraph::new(content)

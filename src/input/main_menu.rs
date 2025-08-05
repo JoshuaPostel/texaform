@@ -1,5 +1,6 @@
 use crate::app::{App, AppResult};
 use crate::input::Screen;
+use crate::surface::state::Seed;
 use crate::surface::{self, AddEntityError};
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
@@ -10,11 +11,11 @@ use crate::ui::main_menu::MainMenu;
 async fn on_select(app: &mut App) -> Result<(), AddEntityError> {
     match app.main_menu.selected() {
         MainMenu::NewGame => {
-            //app.surface = surface::generation::sparse_xs(app.event_sender.clone());
-            //app.surface = surface::generation::perlin(app.event_sender.clone());
-            app.surface = surface::generation::manual(app.event_sender.clone()).await;
-            //surface::generation::init_some_agents(&mut app.surface).await?;
-            //surface::generation::init_starting_agent(&mut app.surface).await?;
+            // make sure random seed is new
+            if matches!(app.seed, Seed::Random(_)) {
+                app.seed = Seed::default();
+            }
+            app.surface = surface::generation::manual(app.event_sender.clone(), app.seed).await;
             surface::generation::init_starting_entities(&mut app.surface).await?;
             app.set_screen(Screen::Surface)
         }
@@ -30,6 +31,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         KeyCode::Up | KeyCode::Char('k') => app.main_menu.select_previous(),
         KeyCode::Down | KeyCode::Char('j') => app.main_menu.select_next(),
         KeyCode::Enter => on_select(app).await?,
+        KeyCode::Char(x) => {
+            if let Some(digit) = x.to_digit(10) {
+                app.seed.append(digit as u64)
+            }
+        }
+        KeyCode::Delete | KeyCode::Backspace => app.seed.backspace(),
         _ => {}
     }
     Ok(())
