@@ -40,7 +40,7 @@ submit to: https://github.com/ratatui/ratatui/discussions/1886
     - [ ] build accumulator
   - [ ] run 5 dogs at once
 - [ ] record bugs
-- [ ] document everything
+- [x] document everything
 - [x] tweak energy levels
 
 ## python TODO
@@ -59,11 +59,11 @@ x >x
 - [ ] something fun when victory researched
   - [x] show victory screen or popup with run stats
     - [x] add command counter
-    - [ ] add random seed value
+    - [x] add random seed value
   - [x] implemented
   - [ ] tested
-- [ ] random seed for deterministic
-  - [ ] map generation
+- [x] random seed for deterministic
+  - [x] map generation
   - [ ] python implementation (bug reproducability) (later)
 - [ ] version field in save file
   - how to parse just this?
@@ -71,6 +71,7 @@ x >x
   - agents list should be implemented like the other lists
 
 ## bugs
+- [ ] rework `save_game` screen input
 - [ ] load game screen: memory allocation of ... bytes failed
   * loading too much/not clearning memory?
 - [ ] focus on entity > dog picks entity > focus shoud `INTERNAL_DEV`

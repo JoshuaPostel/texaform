@@ -13,7 +13,7 @@ use strum_macros;
 use crate::entities::Properties;
 use crate::ui::tech_tree::EdgeLayout;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechTree {
     pub graph: DiGraph<Tech, f32>,
     // order/index matches graph index
@@ -23,6 +23,127 @@ pub struct TechTree {
     pub research_node: Option<usize>,
     pub victory_achieved: bool,
     pub everything_researched: bool,
+}
+
+impl Default for TechTree {
+    fn default() -> TechTree {
+        let mut graph = DiGraph::new();
+
+        let smelter = Tech {
+            kind: TechKind::Smelter,
+            cost: HashMap::from([(Properties::Iron, 1)]),
+            progress_numerator: 0,
+            progress_denominator: 2,
+            unlocked: false,
+            unlocks: Some(Properties::Smelter),
+        };
+        let root = graph.add_node(smelter);
+
+        let laser_cutter = Tech {
+            kind: TechKind::LaserCutter,
+            cost: HashMap::from([(Properties::IronPlate, 1), (Properties::CopperPlate, 1)]),
+            progress_numerator: 0,
+            progress_denominator: 2,
+            unlocked: false,
+            unlocks: Some(Properties::LaserCutter),
+        };
+        graph.add_node(laser_cutter);
+
+        graph.add_node(Tech::new(
+            TechKind::SolarPannel,
+            HashMap::from([(Properties::CopperPlate, 1), (Properties::Wafer, 1)]),
+            Some(Properties::SolarPannel),
+        ));
+        graph.add_node(Tech::new(
+            TechKind::Battery,
+            HashMap::from([(Properties::IronPlate, 1), (Properties::Sulfer, 1)]),
+            Some(Properties::Battery),
+        ));
+        let fabricator = Tech {
+            kind: TechKind::Fabricator,
+            cost: HashMap::from([(Properties::Nut, 2)]),
+            progress_numerator: 0,
+            progress_denominator: 4,
+            unlocked: false,
+            unlocks: Some(Properties::Fabricator),
+        };
+        graph.add_node(fabricator);
+        graph.add_node(Tech::new(
+            TechKind::Dog,
+            HashMap::from([
+                (Properties::Gear, 1),
+                (Properties::Battery, 1),
+                (Properties::SolarPannel, 1),
+            ]),
+            Some(Properties::Dog),
+        ));
+        let accumulator = Tech {
+            kind: TechKind::Accumulator,
+            cost: HashMap::from([(Properties::Battery, 2)]),
+            progress_numerator: 0,
+            progress_denominator: 4,
+            unlocked: false,
+            unlocks: Some(Properties::Accumulator),
+        };
+        graph.add_node(accumulator);
+        let self_sufficent = Tech {
+            kind: TechKind::SelfSufficient,
+            cost: HashMap::from([(Properties::Dog, 1)]),
+            progress_numerator: 0,
+            progress_denominator: 10,
+            unlocked: false,
+            unlocks: None,
+        };
+        graph.add_node(self_sufficent);
+        // negative distances for bellman_ford to give longest path
+        graph.extend_with_edges([
+            (0, 1, -1.0),
+            (0, 2, -1.0),
+            (0, 3, -1.0),
+            (1, 4, -1.0),
+            (1, 5, -1.0),
+            (2, 5, -1.0),
+            (3, 5, -1.0),
+            (3, 6, -1.0),
+            (5, 7, -1.0),
+            // testing distances
+            //(0, 5, -1.0),
+        ]);
+
+        // let distances = dijkstra(&graph, root, None, |_| 1);
+        // tracing::info!("shortest: {distances:#?}");
+        //
+        // works without -1.0 float being stored,
+        // but computes distance for every pair of nodes
+        // graph.extend_with_edges(&[
+        //     (0, 1), (0, 2), (0, 3),
+        //     (1, 4), (2, 4), (2, 5), (3, 5),
+        //     // testing distances
+        //     (0, 5)
+        //
+        // ]);
+        // let distances = floyd_warshall(&graph, |_| -1);
+        // tracing::info!("longest: {distances:#?}");
+
+        let paths = bellman_ford(&graph, root).expect("non-cyclic");
+        //tracing::info!("longest: {paths:#?}");
+
+        let node_depths = paths
+            .distances
+            .into_iter()
+            .map(|f: f32| f.abs() as usize)
+            .collect();
+        tracing::info!("node_depths: {node_depths:#?}");
+
+        TechTree {
+            graph,
+            node_depths,
+            selected_node: 0,
+            research_node: None,
+            victory_achieved: false,
+            everything_researched: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,125 +269,6 @@ impl TechTree {
             }
         } else {
             None
-        }
-    }
-
-    pub fn new() -> TechTree {
-        let mut graph = DiGraph::new();
-
-        let smelter = Tech {
-            kind: TechKind::Smelter,
-            cost: HashMap::from([(Properties::Iron, 1)]),
-            progress_numerator: 0,
-            progress_denominator: 2,
-            unlocked: false,
-            unlocks: Some(Properties::Smelter),
-        };
-        let root = graph.add_node(smelter);
-
-        let laser_cutter = Tech {
-            kind: TechKind::LaserCutter,
-            cost: HashMap::from([(Properties::IronPlate, 1), (Properties::CopperPlate, 1)]),
-            progress_numerator: 0,
-            progress_denominator: 2,
-            unlocked: false,
-            unlocks: Some(Properties::LaserCutter),
-        };
-        graph.add_node(laser_cutter);
-
-        graph.add_node(Tech::new(
-            TechKind::SolarPannel,
-            HashMap::from([(Properties::CopperPlate, 1), (Properties::Wafer, 1)]),
-            Some(Properties::SolarPannel),
-        ));
-        graph.add_node(Tech::new(
-            TechKind::Battery,
-            HashMap::from([(Properties::IronPlate, 1), (Properties::Sulfer, 1)]),
-            Some(Properties::Battery),
-        ));
-        let fabricator = Tech {
-            kind: TechKind::Fabricator,
-            cost: HashMap::from([(Properties::Nut, 2)]),
-            progress_numerator: 0,
-            progress_denominator: 4,
-            unlocked: false,
-            unlocks: Some(Properties::Fabricator),
-        };
-        graph.add_node(fabricator);
-        graph.add_node(Tech::new(
-            TechKind::Dog,
-            HashMap::from([
-                (Properties::Gear, 1),
-                (Properties::Battery, 1),
-                (Properties::SolarPannel, 1),
-            ]),
-            Some(Properties::Dog),
-        ));
-        let accumulator = Tech {
-            kind: TechKind::Accumulator,
-            cost: HashMap::from([(Properties::Battery, 2)]),
-            progress_numerator: 0,
-            progress_denominator: 4,
-            unlocked: false,
-            unlocks: Some(Properties::Accumulator),
-        };
-        graph.add_node(accumulator);
-        let self_sufficent = Tech {
-            kind: TechKind::SelfSufficient,
-            cost: HashMap::from([(Properties::Dog, 1)]),
-            progress_numerator: 0,
-            progress_denominator: 10,
-            unlocked: false,
-            unlocks: None,
-        };
-        graph.add_node(self_sufficent);
-        // negative distances for bellman_ford to give longest path
-        graph.extend_with_edges([
-            (0, 1, -1.0),
-            (0, 2, -1.0),
-            (0, 3, -1.0),
-            (1, 4, -1.0),
-            (1, 5, -1.0),
-            (2, 5, -1.0),
-            (3, 5, -1.0),
-            (3, 6, -1.0),
-            (5, 7, -1.0),
-            // testing distances
-            //(0, 5, -1.0),
-        ]);
-
-        // let distances = dijkstra(&graph, root, None, |_| 1);
-        // tracing::info!("shortest: {distances:#?}");
-        //
-        // works without -1.0 float being stored,
-        // but computes distance for every pair of nodes
-        // graph.extend_with_edges(&[
-        //     (0, 1), (0, 2), (0, 3),
-        //     (1, 4), (2, 4), (2, 5), (3, 5),
-        //     // testing distances
-        //     (0, 5)
-        //
-        // ]);
-        // let distances = floyd_warshall(&graph, |_| -1);
-        // tracing::info!("longest: {distances:#?}");
-
-        let paths = bellman_ford(&graph, root).expect("non-cyclic");
-        //tracing::info!("longest: {paths:#?}");
-
-        let node_depths = paths
-            .distances
-            .into_iter()
-            .map(|f: f32| f.abs() as usize)
-            .collect();
-        tracing::info!("node_depths: {node_depths:#?}");
-
-        TechTree {
-            graph,
-            node_depths,
-            selected_node: 0,
-            research_node: None,
-            victory_achieved: false,
-            everything_researched: false,
         }
     }
 

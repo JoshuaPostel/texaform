@@ -1,5 +1,6 @@
 use crate::app::{App, AppResult, LoadingState};
-use crate::surface::{self, SurfaceState};
+use crate::surface;
+use crate::surface::state::SurfaceState;
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 

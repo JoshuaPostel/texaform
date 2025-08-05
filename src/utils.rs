@@ -6,7 +6,7 @@ pub fn human_readable_tick_count(tick_count: u64) -> String {
     let seconds = (mills / 1000) % 60;
     let minutes = (mills / (1000 * 60)) % 60;
     let hours = mills / (1000 * 60 * 60);
-    format!("playtime: {hours}:{minutes:0>2}:{seconds:0>2}")
+    format!("{hours}:{minutes:0>2}:{seconds:0>2}")
 }
 
 pub fn xy_to_idx(x: usize, y: usize, grid_width: usize) -> usize {

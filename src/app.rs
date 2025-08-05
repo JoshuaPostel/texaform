@@ -1,12 +1,12 @@
 use ratatui::layout::Rect;
 use ratatui::widgets::{Gauge, Paragraph};
 use strum::VariantArray;
-use tokio::fs::metadata;
 
 use crate::effects::Effects;
 use crate::event::Event;
 use crate::input::DoubleClickTracker;
-use crate::surface::{self, Seed, Surface, SurfaceState};
+use crate::surface::state::{Seed, SurfaceState};
+use crate::surface::{self, Surface};
 use crate::ui::documentation::Document;
 use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
@@ -21,8 +21,7 @@ use std::error;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use chrono::{DateTime, Local};
-use rand::Rng;
+use chrono::Local;
 use tokio::sync::mpsc::UnboundedSender;
 
 // TODO remove in favor of top level Result<(), anyhow::Error> to avoid fat pointer
@@ -323,7 +322,7 @@ impl App {
     pub fn tick(&mut self) {
         //TODO run in background
         let five_minutes_of_ticks = 300_000 / crate::TICK_UPDATE_MILLS;
-        if (self.surface.game_stats.tick_count % five_minutes_of_ticks) == 0
+        if (self.surface.game_state.stats.tick_count % five_minutes_of_ticks) == 0
             && !self.surface.agents.is_empty()
             && self.screen != Screen::SaveGame
         {

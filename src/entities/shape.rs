@@ -1,7 +1,7 @@
 use rand::Rng;
-use rand::RngCore;
+use rand_chacha::ChaCha8Rng;
 use ratatui::layout::Position;
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 use crate::utils::{
     checked_pos_to_idx, distance, grid_idx_east, grid_idx_north, grid_idx_south, grid_idx_west,
@@ -100,7 +100,6 @@ impl Shape {
             for y in 0..(radius * 2) + 1 {
                 let pos = Position::new(x, y);
                 let dist = distance(&center, &pos);
-
                 let include = if radius < 4 {
                     dist <= radius as f32
                 } else {
@@ -132,8 +131,9 @@ impl Shape {
     }
 
     // TODO PERF: cache this
-    pub fn edge(&self) -> HashSet<Position> {
-        let mut edge = HashSet::new();
+    // need BTreeSet for rand determinisim
+    pub fn edge(&self) -> BTreeSet<Position> {
+        let mut edge = BTreeSet::new();
         for pos in &self.positions {
             if self.is_edge(pos) {
                 edge.insert(*pos);
@@ -168,17 +168,16 @@ impl Shape {
         footprint
     }
 
-    // TODO: make deterministic with seed
-    pub fn jitter_edge(&mut self, rng: &mut impl RngCore) {
+    pub fn jitter_edge(&mut self, rng: &mut ChaCha8Rng) {
         let edge = self.edge();
         for pos in edge {
-            if rng.random::<f64>() > 0.5 {
+            if rng.random() {
                 self.positions.remove(&pos);
             }
         }
     }
 
-    pub fn jittered_circle(rng: &mut impl RngCore, radius: u16, iters: u16) -> Shape {
+    pub fn jittered_circle(rng: &mut ChaCha8Rng, radius: u16, iters: u16) -> Shape {
         let mut shape = Shape::circle(radius);
         for _ in 0..iters + 1 {
             shape.jitter_edge(rng);
@@ -186,14 +185,14 @@ impl Shape {
         shape
     }
 
-    pub fn wave(rng: &mut impl RngCore, length: u16, bend_chance: f64, horizontal: bool) -> Shape {
+    pub fn wave(rng: &mut ChaCha8Rng, length: u16, bend_chance: f32, horizontal: bool) -> Shape {
         let mut positions = HashSet::new();
         if horizontal {
             let mut y = length;
             for x in length..length * 2 {
                 positions.insert(Position::new(x, y));
-                if rng.random::<f64>() < bend_chance {
-                    if rng.random::<bool>() {
+                if rng.random::<f32>() < bend_chance {
+                    if rng.random() {
                         y += 1;
                     } else {
                         y = y.saturating_sub(1);
@@ -204,7 +203,7 @@ impl Shape {
             let mut x = length;
             for y in length..length * 2 {
                 positions.insert(Position::new(x, y));
-                if rng.random::<f64>() < bend_chance {
+                if rng.random::<f32>() < bend_chance {
                     if rng.random::<bool>() {
                         x += 1;
                     } else {
@@ -218,9 +217,9 @@ impl Shape {
     }
 
     pub fn waffle_fry(
-        rng: &mut impl RngCore,
+        rng: &mut ChaCha8Rng,
         length: u16,
-        bend_chance: f64,
+        bend_chance: f32,
         horizontal: bool,
     ) -> Shape {
         let (w1, w2, w3) = if horizontal {
@@ -260,16 +259,6 @@ impl Shape {
         }
         Shape { positions }
     }
-
-    //    pub fn translate(self, x: i16, y: i16) -> Shape {
-    //        let mut positions = HashSet::new();
-    //        for pos in self.positions {
-    //            let new_x = u16::try_from(pos.x as i16 + x).unwrap_or(0);
-    //            let new_y = u16::try_from(pos.y as i16 + y).unwrap_or(0);
-    //            positions.insert(Position::new(new_x, new_y));
-    //        }
-    //        Shape { positions }
-    //    }
 
     // TODO matrix transforms for rotation
     //

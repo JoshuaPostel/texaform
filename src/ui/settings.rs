@@ -8,7 +8,6 @@ use crate::app::App;
 use crate::ui::render_widget_clamped;
 
 //use tokio::time::{sleep, Duration};
-use std::{thread, time};
 
 pub fn render(app: &App, frame: &mut Frame) {
     let block = Paragraph::new("TODO")

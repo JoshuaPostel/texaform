@@ -1,15 +1,14 @@
 use crate::agents::{Agent, UpdateEnum};
 use crate::entities::{EntityContainer, Properties};
+use crate::surface::Power;
 use crate::surface::grid::{Gent, Grid};
-use crate::surface::{GameState, Power};
+use crate::surface::state::GameState;
 use crate::ui::render_effect_clamped;
 
 use ratatui::Frame;
 use ratatui::buffer::Cell;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::{Color, Style};
-
-use tracing::*;
 
 use serde::{Deserialize, Serialize};
 

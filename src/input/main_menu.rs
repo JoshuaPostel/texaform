@@ -1,5 +1,6 @@
 use crate::app::{App, AppResult};
 use crate::input::Screen;
+use crate::surface::state::Seed;
 use crate::surface::{self, AddEntityError};
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
@@ -10,12 +11,11 @@ use crate::ui::main_menu::MainMenu;
 async fn on_select(app: &mut App) -> Result<(), AddEntityError> {
     match app.main_menu.selected() {
         MainMenu::NewGame => {
-            //app.surface = surface::generation::sparse_xs(app.event_sender.clone());
-            //app.surface = surface::generation::perlin(app.event_sender.clone());
-            app.surface =
-                surface::generation::manual(app.event_sender.clone(), app.seed.value()).await;
-            //surface::generation::init_some_agents(&mut app.surface).await?;
-            //surface::generation::init_starting_agent(&mut app.surface).await?;
+            // make sure random seed is new
+            if matches!(app.seed, Seed::Random(_)) {
+                app.seed = Seed::default();
+            }
+            app.surface = surface::generation::manual(app.event_sender.clone(), app.seed).await;
             surface::generation::init_starting_entities(&mut app.surface).await?;
             app.set_screen(Screen::Surface)
         }

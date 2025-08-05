@@ -11,28 +11,26 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::agents::hud::{self, Hud};
 use crate::agents::{Agent, Comms, UpdateEnum};
-use crate::app::AppResult;
 use crate::entities::Properties;
 use crate::event::Event;
-use crate::logging;
-use crate::tech_tree::Tech;
 use crate::tech_tree::TechTree;
 use crate::ui::render_effect_clamped;
 use crate::utils::pos_to_idx;
 
-use petgraph::graph::NodeIndex;
 use thiserror::Error;
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
+use std::io::BufWriter;
 
 use serde_with::serde_as;
 
 pub mod generation;
 pub mod grid;
+pub mod state;
 pub mod tutorial;
 use crate::surface::grid::{Gent, Grid};
+use crate::surface::state::{GameState, GameStats, Seed, VictoryStats};
 use crate::surface::tutorial::Tutorial;
 
 //const GRID_SIZE: usize = 1000;
@@ -42,95 +40,6 @@ const GRID_SIZE: usize = 250;
 pub enum Focus {
     Position(Position),
     Agent(usize),
-}
-
-#[serde_as]
-#[derive(Serialize)]
-pub struct Surface {
-    pub x: usize,
-    pub y: usize,
-    pub grid: Grid,
-
-    /// address to grid position mapping
-    pub agents: BTreeMap<usize, Comms>,
-    pub power: Power,
-
-    //pub game_state: Arc<RwLock<GameState>>,
-    pub game_state: GameState,
-
-    pub game_stats: GameStats,
-    pub victory_stats: Option<VictoryStats>,
-
-    #[serde(skip)]
-    pub hud: Hud,
-
-    #[serde(skip)]
-    pub focus: Option<Focus>,
-
-    // TODO move this back up to App and use a reference/smart pointer?
-    #[serde(skip)]
-    pub event_sender: UnboundedSender<Event>,
-
-    #[serde(skip)]
-    effects: Vec<(Effect, Rect)>,
-}
-
-// order of fields matters for saving/loading
-#[serde_as]
-#[derive(Debug, Deserialize)]
-pub struct SurfaceState {
-    x: usize,
-    y: usize,
-    pub grid: Grid,
-
-    pub agents: BTreeMap<usize, Comms>,
-    pub power: Power,
-    pub game_state: GameState,
-    pub game_stats: GameStats,
-    pub victory_stats: Option<VictoryStats>,
-}
-
-impl SurfaceState {
-    pub fn load(path: &std::path::Path) -> AppResult<SurfaceState> {
-        //        let mut save_path = crate::logging::get_data_dir();
-        //        save_path.push("save_file.texaform");
-        let save_file = File::open(path)?;
-        tracing::info!("save_file {save_file:?} opened");
-        let mut reader = BufReader::new(save_file);
-        tracing::info!("reader created");
-        // TODO panics when deserializing different version of SurfaceState
-        // need to set limit on how much it can read
-        let surface_state: SurfaceState = bincode::deserialize_from(&mut reader)?;
-        tracing::info!("loading worked!");
-        //tracing::info!("{:?}", surface_state);
-        Ok(surface_state)
-    }
-
-    pub async fn into_surface(mut self, event_sender: UnboundedSender<Event>) -> Surface {
-        // TODO
-        //        let game_state = Arc::new(RwLock::new(GameState {
-        //            unlocked_entities: HashSet::from([Properties::Warehouse, Properties::Smelter]),
-        //            tech_tree: TechTree::new(),
-        //        }));
-        for comms in self.agents.values_mut() {
-            comms.init(&event_sender).await;
-        }
-
-        Surface {
-            x: self.x,
-            y: self.y,
-            grid: self.grid,
-            agents: self.agents,
-            power: self.power,
-            game_state: self.game_state,
-            game_stats: self.game_stats,
-            victory_stats: self.victory_stats,
-            event_sender: event_sender.clone(),
-            effects: vec![],
-            focus: None,
-            hud: Hud::default(),
-        }
-    }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -186,6 +95,34 @@ pub enum AddEntityError {
     OutOfBounds,
 }
 
+#[serde_as]
+#[derive(Serialize)]
+pub struct Surface {
+    pub x: usize,
+    pub y: usize,
+    pub grid: Grid,
+
+    /// address to grid position mapping
+    pub agents: BTreeMap<usize, Comms>,
+    pub power: Power,
+
+    pub game_state: GameState,
+    pub victory_stats: Option<VictoryStats>,
+
+    #[serde(skip)]
+    pub hud: Hud,
+
+    #[serde(skip)]
+    pub focus: Option<Focus>,
+
+    // TODO move this back up to App and use a reference/smart pointer?
+    #[serde(skip)]
+    pub event_sender: UnboundedSender<Event>,
+
+    #[serde(skip)]
+    effects: Vec<(Effect, Rect)>,
+}
+
 impl std::fmt::Debug for Surface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!("{:?}", self.grid))
@@ -233,20 +170,12 @@ impl Surface {
 
     pub fn tick(&mut self) {
         if self.game_state.tech_tree.victory_achieved && self.victory_stats.is_none() {
-            let mut agent_count = HashMap::<String, u64>::new();
-            for comms in self.agents.values() {
-                *agent_count.entry(comms.entity.to_string()).or_insert(0) += 1;
-            }
             self.victory_stats = Some(VictoryStats {
-                seed: self.game_stats.seed,
-                tick_count: self.game_stats.tick_count,
-                manual_command_count: self.game_stats.manual_command_count,
-                tcp_command_count: self.game_stats.tcp_command_count,
-                agent_count,
+                stats: self.game_state.stats.clone(),
                 show_victory: true,
             });
         }
-        self.game_stats.tick_count += 1;
+        self.game_state.stats.tick_count += 1;
         let positions: Vec<Position> = self
             .agents
             .values()
@@ -489,6 +418,12 @@ impl Surface {
                 if self.grid.buildable(rect) {
                     self.grid.insert(pos, Gent::Age(agent));
                     let comms = Comms::new(self, Some(rect), entity).await;
+                    self.game_state
+                        .stats
+                        .agent_count
+                        .entry(entity.to_string())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(1);
                     let port = comms.port;
                     self.agents.insert(port, comms);
                     for pos in rect.positions().skip(1) {
@@ -507,7 +442,6 @@ impl Surface {
                     None => Err(AddEntityError::OutOfBounds),
                     Some(Gent::Empty) => {
                         self.grid.insert(pos, Gent::Age(agent));
-                        // TODO should width and height be 0?
                         let location = Rect {
                             x: pos.x,
                             y: pos.y,
@@ -515,6 +449,12 @@ impl Surface {
                             height: 1,
                         };
                         let comms = Comms::new(self, Some(location), entity).await;
+                        self.game_state
+                            .stats
+                            .agent_count
+                            .entry(entity.to_string())
+                            .and_modify(|count| *count += 1)
+                            .or_insert(1);
                         let port = comms.port;
                         self.agents.insert(port, comms);
                         Ok(port)
@@ -612,7 +552,7 @@ impl Surface {
     }
 
     pub async fn update_agent_remote(&mut self, port: &usize, msg: String) {
-        self.game_stats.tcp_command_count += 1;
+        self.game_state.stats.tcp_command_count += 1;
         // TODO use unsafe mem::swap directly avoiding the push and pop
         // see source code of swap(a, b)
         let reply = if let Some(pos) = self.agent_position(port) {
@@ -633,7 +573,7 @@ impl Surface {
     }
 
     pub async fn update_agent_manual(&mut self, port: &usize) {
-        self.game_stats.manual_command_count += 1;
+        self.game_state.stats.manual_command_count += 1;
         // TODO use unsafe mem::swap directly avoiding the push and pop
         // see source code of swap(a, b)
         if let Some(comms) = self.agents.get_mut(port) {
@@ -798,12 +738,16 @@ impl Surface {
         grid: Grid,
         x: usize,
         y: usize,
+        seed: Seed,
         event_sender: UnboundedSender<Event>,
     ) -> Surface {
+        let tech_tree = TechTree::default();
+        let research_count = tech_tree.graph.raw_nodes().iter().count();
         let game_state = GameState {
             unlocked_entities: HashSet::from([Properties::Dog]),
-            tech_tree: TechTree::new(),
+            tech_tree,
             tutorial_state: Tutorial::Start,
+            stats: GameStats::new(seed, research_count),
         };
 
         let mut surface = Surface {
@@ -813,7 +757,6 @@ impl Surface {
             agents: BTreeMap::new(),
             event_sender,
             game_state,
-            game_stats: GameStats::default(),
             victory_stats: None,
             power: Power::default(),
             effects: vec![],
@@ -823,107 +766,5 @@ impl Surface {
         let comms = Comms::new(&surface, None, Properties::HUD).await;
         surface.agents.insert(3333, comms);
         surface
-    }
-}
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum Seed {
-    Random(u64),
-    Manual(u64),
-}
-
-impl Seed {
-    pub fn value(&self) -> u64 {
-        match self {
-            Seed::Random(x) => *x,
-            Seed::Manual(x) => *x,
-        }
-    }
-
-    pub fn ui_string(&self) -> String {
-        match self {
-            Seed::Manual(x) => format!("Seeded: {x}"),
-            Seed::Random(x) => format!("Random Seed: {x}"),
-        }
-    }
-
-    pub fn append(&mut self, digit: u64) {
-        let value = match self {
-            Seed::Random(_) => 0,
-            Seed::Manual(x) => *x,
-        };
-        // ensure max seed of 999_999
-        if value < 100_000 {
-            *self = Seed::Manual((value * 10) + digit);
-        }
-    }
-
-    pub fn backspace(&mut self) {
-        if let Seed::Manual(value) = self {
-            if 10 < *value {
-                *self = Seed::Manual(*value / 10);
-            } else {
-                *self = Seed::default()
-            }
-        }
-    }
-}
-
-impl Default for Seed {
-    fn default() -> Seed {
-        let mut rng = rand::rng();
-        let seed = rng.random_range(0..999_999);
-        Seed::Random(seed)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GameStats {
-    pub seed: Seed,
-    pub tick_count: u64,
-    pub manual_command_count: u64,
-    pub tcp_command_count: u64,
-    // TODO will require reworking Update
-    // pub error_count: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct VictoryStats {
-    pub seed: Seed,
-    pub tick_count: u64,
-    pub manual_command_count: u64,
-    pub tcp_command_count: u64,
-    // TODO will require reworking Update
-    // pub error_count: u64,
-    pub agent_count: HashMap<String, u64>,
-    pub show_victory: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GameState {
-    pub unlocked_entities: HashSet<Properties>,
-    pub tech_tree: TechTree,
-    pub tutorial_state: Tutorial,
-}
-
-impl GameState {
-    //    pub fn progress_tech(&mut self, tech_node: usize) {
-    //        if let Some(unlocked_entity) = self.tech_tree.progress(tech_node) {
-    //            self.unlocked_entities.insert(unlocked_entity);
-    //        }
-    //    }
-
-    pub fn progress_current_tech(&mut self) {
-        if let Some(tech_node) = self.tech_tree.research_node {
-            if let Some(unlocked_entity) = self.tech_tree.progress(tech_node) {
-                self.unlocked_entities.insert(unlocked_entity);
-            }
-        }
-    }
-
-    pub fn current_tech(&self) -> Option<&Tech> {
-        self.tech_tree
-            .research_node
-            .and_then(|node_idx| self.tech_tree.graph.node_weight(NodeIndex::new(node_idx)))
     }
 }

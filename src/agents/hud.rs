@@ -11,7 +11,7 @@ use crate::surface::Power;
 use crate::tech_tree::{Tech, TechKind, TechStatus};
 
 impl WidgetRef for Hud {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {}
+    fn render_ref(&self, _area: Rect, _buf: &mut Buffer) {}
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]

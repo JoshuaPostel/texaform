@@ -8,7 +8,7 @@ use ratatui::{
 use strum::IntoEnumIterator;
 
 use crate::effects::Effects;
-use crate::surface::Seed;
+use crate::surface::state::Seed;
 use crate::ui::{AppLayout, center, render_effect_clamped, render_widget_clamped};
 use crate::widgets::list::TextList;
 use crate::{app::App, widgets::list::AlignedLine};
