@@ -19,7 +19,7 @@ pub fn load_selected_save_file(app: &mut App) {
             let load_result = match SurfaceState::load(path) {
                 Ok(surface_state) => LoadingState::Loaded(Box::new(surface_state)),
                 Err(e) => {
-                    tracing::error!("e: {e}");
+                    tracing::error!("loading error: {e}");
                     LoadingState::Failed(e.to_string())
                 }
             };

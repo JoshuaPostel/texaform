@@ -1,6 +1,6 @@
+use crate::AppResult;
 use crate::event::Event;
 use bytes::BytesMut;
-use color_eyre::eyre;
 use std::fmt::Display;
 use std::str;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -18,7 +18,7 @@ pub async fn handle_socket_old<R: Display + Send>(
     mut socket: TcpStream,
     event_sender: UnboundedSender<Event>,
     rx: &mut Receiver<R>,
-) -> eyre::Result<String> {
+) -> AppResult<String> {
     info!("hello socket");
     let mut data = [0; 32];
     let mut heartbeat = 5;
@@ -57,7 +57,10 @@ pub async fn handle_socket_old<R: Display + Send>(
 // initailly happened when saving/loading game
 // moving more/all long blocking calls to a background task should remove the need for this
 #[async_recursion]
-async fn retry_recv<R: Display + Send>(rx: &mut Receiver<R>, try_count: u8) -> String {
+async fn retry_recv<R>(rx: &mut Receiver<R>, try_count: u8) -> String
+where
+    R: Display + Send,
+{
     match rx.try_recv() {
         Ok(reply) => {
             info!("reply: {reply}");
@@ -82,7 +85,7 @@ pub async fn handle_socket<R: Display + Send>(
     mut socket: TcpStream,
     event_sender: UnboundedSender<Event>,
     rx: &mut Receiver<R>,
-) -> eyre::Result<String> {
+) -> AppResult<String> {
     info!("hello socket");
     let mut buf = BytesMut::with_capacity(32);
     let mut heartbeat = 5;

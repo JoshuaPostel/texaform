@@ -11,17 +11,15 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::agents::hud::{self, Hud};
 use crate::agents::{Agent, Comms, UpdateEnum};
-use crate::entities::Properties;
+use crate::entities::Entity;
 use crate::event::Event;
 use crate::tech_tree::TechTree;
 use crate::ui::render_effect_clamped;
-use crate::utils::pos_to_idx;
+use crate::utils::{idx_to_pos, pos_to_idx};
 
 use thiserror::Error;
 
 use std::collections::{BTreeMap, HashSet};
-use std::fs::File;
-use std::io::BufWriter;
 
 use serde_with::serde_as;
 
@@ -30,7 +28,7 @@ pub mod grid;
 pub mod state;
 pub mod tutorial;
 use crate::surface::grid::{Gent, Grid};
-use crate::surface::state::{GameState, GameStats, Seed, VictoryStats};
+use crate::surface::state::{GameState, GameStats, Seed, VERSION, Version, VictoryStats};
 use crate::surface::tutorial::Tutorial;
 
 //const GRID_SIZE: usize = 1000;
@@ -98,6 +96,7 @@ pub enum AddEntityError {
 #[serde_as]
 #[derive(Serialize)]
 pub struct Surface {
+    version: Version,
     pub x: usize,
     pub y: usize,
     pub grid: Grid,
@@ -105,7 +104,6 @@ pub struct Surface {
     /// address to grid position mapping
     pub agents: BTreeMap<usize, Comms>,
     pub power: Power,
-
     pub game_state: GameState,
     pub victory_stats: Option<VictoryStats>,
 
@@ -137,10 +135,9 @@ impl Surface {
         }
     }
 
-    // TODO how to return Option<&dyn Agent>
-    pub fn focused_agent(&self) -> Option<&Box<dyn Agent>> {
+    pub fn focused_agent(&self) -> Option<&dyn Agent> {
         self.focused_agent_port()
-            .and_then(|port| self.get_agent(&port))
+            .and_then(|port| self.get_agent(&port).map(|v| &**v))
     }
 
     pub fn focused_agent_comms(&self) -> Option<&Comms> {
@@ -151,21 +148,6 @@ impl Surface {
     pub fn focused_agent_mut(&mut self) -> Option<&mut Box<dyn Agent>> {
         self.focused_agent_port()
             .and_then(|port| self.get_mut_agent(&port))
-    }
-
-    pub fn save(&self, name: String) {
-        let mut save_path = crate::logging::get_data_dir();
-        save_path.push(name + ".texaform");
-        tracing::info!("saving to: {save_path:?}");
-        // TODO handle this error properly
-        let save_file = File::create(save_path).expect("Unable to create file");
-        let writer = BufWriter::new(save_file);
-        //bincode::serialize_into(writer, &self).unwrap();
-        // TODO issue is here.  Why is writer writing default/empty self?
-        //serde_json::to_writer(writer, &self).unwrap();
-        tracing::info!("before save");
-        bincode::serialize_into(writer, &self).unwrap();
-        tracing::info!("after save");
     }
 
     pub fn tick(&mut self) {
@@ -197,7 +179,7 @@ impl Surface {
                 && age.integrity() == 0
             {
                 agents_to_delete.push(comms.port);
-                let area = match age.properties().footprint() {
+                let area = match age.entity().footprint() {
                     Some(fp) => Rect {
                         x: pos.x,
                         y: pos.y,
@@ -362,7 +344,7 @@ impl Surface {
     ) {
     }
 
-    pub fn add_entity(&mut self, pos: &Position, prop: Properties) -> Result<(), AddEntityError> {
+    pub fn add_entity(&mut self, pos: &Position, prop: Entity) -> Result<(), AddEntityError> {
         let idx = pos_to_idx(pos, GRID_SIZE);
         match prop.footprint() {
             Some(fp) => {
@@ -377,7 +359,7 @@ impl Surface {
                     self.grid.insert(pos, Gent::Intmd(prop));
                     for pos in rect.positions().skip(1) {
                         self.grid
-                            .insert(&pos, Gent::Large(Surface::idx_to_pos(idx)))
+                            .insert(&pos, Gent::Large(idx_to_pos(idx, GRID_SIZE)))
                     }
                     Ok(())
                 } else {
@@ -406,8 +388,8 @@ impl Surface {
         agent: Box<dyn Agent + 'static>,
     ) -> Result<usize, AddEntityError> {
         let idx = pos_to_idx(pos, GRID_SIZE);
-        let entity = agent.properties();
-        match agent.properties().footprint() {
+        let entity = agent.entity();
+        match agent.entity().footprint() {
             Some(fp) => {
                 let rect = Rect {
                     x: pos.x,
@@ -428,7 +410,7 @@ impl Surface {
                     self.agents.insert(port, comms);
                     for pos in rect.positions().skip(1) {
                         self.grid
-                            .insert(&pos, Gent::Large(Surface::idx_to_pos(idx)))
+                            .insert(&pos, Gent::Large(idx_to_pos(idx, GRID_SIZE)))
                     }
                     Ok(port)
                 } else {
@@ -468,14 +450,6 @@ impl Surface {
         }
     }
 
-    // TODO could panic
-    fn idx_to_pos(idx: usize) -> Position {
-        Position {
-            x: (idx % GRID_SIZE) as u16,
-            y: (idx / GRID_SIZE) as u16,
-        }
-    }
-
     pub fn delete_agent(&mut self, port: &usize) {
         if self.focus == Some(Focus::Agent(*port)) {
             self.focus = None;
@@ -483,7 +457,7 @@ impl Surface {
         if let Some(pos) = self.agents.get(port).and_then(|comms| comms.position)
             && let Some(agent) = self.grid.pop(&pos)
         {
-            let area = match agent.properties().footprint() {
+            let area = match agent.entity().footprint() {
                 Some(fp) => Rect {
                     x: pos.x,
                     y: pos.y,
@@ -525,20 +499,6 @@ impl Surface {
         }
         None
     }
-
-    // TODO is a borrowed box nessisary?
-    //    #[allow(clippy::borrowed_box)]
-    //    pub fn agents(&self) -> Vec<&Box<dyn Agent>> {
-    //        let mut agents = vec![];
-    //        for comms in self.agents.values() {
-    //            if let Some(Gent::Age(agent)) = &self.grid.get(&comms.position) {
-    //                agents.push(agent);
-    //            }
-    //        }
-    //        agents
-    //        // how to do like this?
-    //        //self.agents.values().into_iter().map(|idx| &self.grid[*idx]).collect()
-    //    }
 
     pub fn agent_port(&self, pos: &Position) -> Option<usize> {
         self.agents
@@ -688,7 +648,7 @@ impl Surface {
                     if let Some((port, _)) = self.agents.iter().nth(self.hud.agent_idx)
                         && let Some(agent) = self.get_agent(port)
                     {
-                        let kind = agent.properties().to_string();
+                        let kind = agent.entity().to_string();
                         self.hud.agent_idx += 1;
                         hud::Reply::LIST_AGNT { port: *port, kind }
                     } else {
@@ -744,13 +704,14 @@ impl Surface {
         let tech_tree = TechTree::default();
         let research_count = tech_tree.graph.raw_nodes().iter().count();
         let game_state = GameState {
-            unlocked_entities: HashSet::from([Properties::Dog]),
+            unlocked_entities: HashSet::from([Entity::Dog]),
             tech_tree,
             tutorial_state: Tutorial::Start,
             stats: GameStats::new(seed, research_count),
         };
 
         let mut surface = Surface {
+            version: VERSION,
             grid,
             x,
             y,
@@ -763,7 +724,7 @@ impl Surface {
             focus: None,
             hud: Hud::default(),
         };
-        let comms = Comms::new(&surface, None, Properties::HUD).await;
+        let comms = Comms::new(&surface, None, Entity::HUD).await;
         surface.agents.insert(3333, comms);
         surface
     }

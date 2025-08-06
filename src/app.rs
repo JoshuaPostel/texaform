@@ -24,7 +24,6 @@ use std::time::Duration;
 use chrono::Local;
 use tokio::sync::mpsc::UnboundedSender;
 
-// TODO remove in favor of top level Result<(), anyhow::Error> to avoid fat pointer
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -307,15 +306,16 @@ impl App {
         Ok(())
     }
 
-    fn autosave_and_cleanup(&mut self) {
+    fn autosave_and_cleanup(&mut self) -> AppResult<()> {
         tracing::info!("AUTOSAVE TIME");
         let now = Local::now();
         let formatted_time = now.format("%Y_%m_%d_%H:%M:%S");
-        self.surface.save(format!("{formatted_time}_autosave"));
+        SurfaceState::save(&self.surface, format!("{formatted_time}_autosave"))?;
         match self.clean_up_autosaves() {
             Ok(_) => tracing::info!("cleaned up autosave dir"),
             Err(e) => tracing::error!("failed to clean up autosave dir: {e}"),
         }
+        Ok(())
     }
 
     /// Handles the tick event of the terminal.
@@ -326,7 +326,10 @@ impl App {
             && !self.surface.agents.is_empty()
             && self.screen != Screen::SaveGame
         {
-            self.autosave_and_cleanup()
+            match self.autosave_and_cleanup() {
+                Ok(_) => (),
+                Err(e) => tracing::error!("failed to autosave: {e}"),
+            }
         }
         self.surface.tick();
     }

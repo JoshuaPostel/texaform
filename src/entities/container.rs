@@ -1,4 +1,5 @@
-use crate::entities::{PickResult, Properties};
+use crate::AppResult;
+use crate::entities::{Entity, PickResult};
 
 use std::collections::HashMap;
 
@@ -12,9 +13,9 @@ use ratatui::widgets::{Block, BorderType, Paragraph, WidgetRef, Wrap};
 // TODO should remove_content have this check?
 //fn remove_cost(buffer: &mut Buffer, cost: &Cost) {
 //    if contains_cost(buffer, cost) {
-//        for (prop, count) in cost.iter() {
+//        for (entity, count) in cost.iter() {
 //            for _ in 0..*count {
-//                let idx = buffer.iter().position(|p| p == prop).expect("checked");
+//                let idx = buffer.iter().position(|p| p == entity).expect("checked");
 //                buffer.remove(idx);
 //            }
 //        }
@@ -89,7 +90,7 @@ impl WidgetRef for EntityContainer {
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct EntityContainer {
-    pub content: Vec<Properties>,
+    pub content: Vec<Entity>,
     pub capacity: usize,
     pub title: String,
     pub content_chars: Vec<char>,
@@ -106,7 +107,7 @@ impl EntityContainer {
     }
 
     pub fn pick(&mut self, c: char) -> PickResult {
-        let prop = match self.content.iter().position(|gent| gent.character() == c) {
+        let entity = match self.content.iter().position(|gent| gent.character() == c) {
             Some(idx) => {
                 self.content_chars.remove(idx);
                 self.content_chars.push(' ');
@@ -115,7 +116,7 @@ impl EntityContainer {
             None => None,
         };
         PickResult {
-            picked: prop,
+            picked: entity,
             replace: None,
         }
     }
@@ -124,35 +125,39 @@ impl EntityContainer {
         self.content.len() < self.capacity
     }
 
-    pub fn place(&mut self, properties: Properties) {
+    pub fn place(&mut self, entity: Entity) {
         if self.placable() {
-            self.content_chars[self.content.len()] = properties.character();
-            self.content.push(properties);
+            self.content_chars[self.content.len()] = entity.character();
+            self.content.push(entity);
         }
     }
 
-    pub fn pop(&mut self) -> Option<Properties> {
+    pub fn pop(&mut self) -> Option<Entity> {
         match self.content.pop() {
-            Some(prop) => {
+            Some(entity) => {
                 self.content_chars[self.content.len()] = ' ';
-                Some(prop)
+                Some(entity)
             }
             None => None,
         }
     }
 
-    pub fn remove_entity(&mut self, to_remove: &Properties) -> Result<(), ()> {
-        let idx = self.content.iter().position(|p| p == to_remove).ok_or(())?;
+    pub fn remove_entity(&mut self, to_remove: &Entity) -> AppResult<()> {
+        let idx = self
+            .content
+            .iter()
+            .position(|p| p == to_remove)
+            .ok_or(format!("did not contain {to_remove}"))?;
         self.content_chars.remove(idx);
         self.content_chars.push(' ');
         self.content.remove(idx);
         Ok(())
     }
 
-    pub fn remove_content(&mut self, to_remove: &HashMap<Properties, u8>) -> Result<(), ()> {
-        for (prop, count) in to_remove.iter() {
+    pub fn remove_content(&mut self, to_remove: &HashMap<Entity, u8>) -> AppResult<()> {
+        for (entity, count) in to_remove.iter() {
             for _ in 0..*count {
-                self.remove_entity(prop)?;
+                self.remove_entity(entity)?;
             }
         }
         Ok(())

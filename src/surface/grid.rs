@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use strum::EnumMessage;
 
 use crate::agents::Agent;
-use crate::entities::{PickResult, Properties};
+use crate::entities::{Entity, PickResult};
 
 use crate::utils::checked_pos_to_idx;
 use crate::utils::pos_to_idx;
@@ -21,7 +21,7 @@ use super::GRID_SIZE;
 pub enum Gent {
     Empty,
     BeingUpdated,
-    Intmd(Properties),
+    Intmd(Entity),
     Age(Box<dyn Agent>),
     Large(Position),
 }
@@ -35,7 +35,7 @@ impl Gent {
 impl WidgetRef for Gent {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         match self {
-            Gent::Intmd(p) => Paragraph::new(p.get_message().expect("all props have message"))
+            Gent::Intmd(e) => Paragraph::new(e.get_message().expect("all entities have message"))
                 .render_ref(area, buf),
             Gent::Age(a) => a.render_ref(area, buf),
             Gent::Empty => Paragraph::new("null and void").render_ref(area, buf),
@@ -45,11 +45,11 @@ impl WidgetRef for Gent {
 }
 
 impl Gent {
-    pub fn properties(&self) -> Properties {
+    pub fn entity(&self) -> Entity {
         match self {
             Gent::Intmd(p) => *p,
-            Gent::Age(a) => a.properties(),
-            _ => Properties::Empty,
+            Gent::Age(a) => a.entity(),
+            _ => Entity::Empty,
         }
     }
     // used in ui/load_game.rs
@@ -86,23 +86,23 @@ impl Gent {
         }
     }
 
-    pub fn placable(&self, prop: &Properties) -> bool {
+    pub fn placable(&self, entity: &Entity) -> bool {
         match self {
             Gent::Empty => false,
             Gent::Intmd(_) => false,
-            Gent::Age(a) => a.placable(prop),
+            Gent::Age(a) => a.placable(entity),
             Gent::Large(_) => false,
             Gent::BeingUpdated => todo!(),
         }
     }
 
-    pub fn place(&mut self, prop: Properties) {
+    pub fn place(&mut self, entity: Entity) {
         match self {
             Gent::Empty => {
-                *self = Gent::Intmd(prop);
+                *self = Gent::Intmd(entity);
             }
             Gent::Intmd(_) => unreachable!("cannot place into intermediate"),
-            Gent::Age(a) => a.place(prop),
+            Gent::Age(a) => a.place(entity),
             Gent::Large(_) => todo!(),
             Gent::BeingUpdated => todo!(),
         }
@@ -157,7 +157,7 @@ impl Grid {
             None
         }
     }
-    pub fn pick(&mut self, c: char, pos: &Position) -> Option<Properties> {
+    pub fn pick(&mut self, c: char, pos: &Position) -> Option<Entity> {
         //if let Some(mut gent) = self.pop(pos) {
         if let Some(gent) = self.get_mut(pos) {
             let pick_result = gent.pick(c);

@@ -57,11 +57,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
             } else {
                 app.documentation.hover(None);
             }
-            if app.layout.documentation.copy_button.contains(pos) {
-                app.copy_button.button.is_hovered = true;
-            } else {
-                app.copy_button.button.is_hovered = false;
-            }
+            app.copy_button.button.is_hovered = app.layout.documentation.copy_button.contains(pos);
         }
         Kind::Down(MouseButton::Left) => {
             if app.layout.documentation.list.contains(pos) {

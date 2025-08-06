@@ -10,7 +10,7 @@ use rand_chacha::ChaCha8Rng;
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::agents::Agent;
-use crate::entities::Properties;
+use crate::entities::Entity;
 use crate::event::Event;
 
 use crate::utils::{idx_to_pos, pos_to_idx};
@@ -24,15 +24,15 @@ use crate::entities::shape::Shape;
 use crate::surface::Seed;
 
 use crate::surface::grid::{Gent, Grid};
-use crate::surface::state::GameState;
+use crate::surface::state::{GameState, VERSION};
 use crate::surface::{AddEntityError, Focus, GRID_SIZE, Power, Surface};
 
 use ratatui::layout::Position;
 
 fn insert_shape(
     shape: Shape,
-    prop: Properties,
-    grid: &mut Vec<Gent>,
+    entity: Entity,
+    grid: &mut [Gent],
     idx: usize,
     unbuildable_idx: &mut HashSet<usize>,
 ) {
@@ -54,7 +54,7 @@ fn insert_shape(
         return;
     }
     for grid_idx in idxs {
-        grid[grid_idx] = Gent::Intmd(prop);
+        grid[grid_idx] = Gent::Intmd(entity);
     }
     let footprint = shape.grid_footprint(&grid_pos, GRID_SIZE);
     unbuildable_idx.extend(footprint);
@@ -84,7 +84,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>, seed: Seed) -> Surface
             let copper_vein = Shape::jittered_circle(&mut rng, radius, iters);
             insert_shape(
                 copper_vein,
-                Properties::Copper,
+                Entity::Copper,
                 &mut grid,
                 idx,
                 &mut unbuildable,
@@ -100,7 +100,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>, seed: Seed) -> Surface
             let bend_chance = rand_bend_chance.sample(&mut rng);
             let horizontal = rng.random();
             let wf = Shape::waffle_fry(&mut rng, length, bend_chance, horizontal).translate(0, 1);
-            insert_shape(wf, Properties::Silicate, &mut grid, idx, &mut unbuildable);
+            insert_shape(wf, Entity::Silicate, &mut grid, idx, &mut unbuildable);
         }
     }
 
@@ -108,7 +108,7 @@ pub async fn manual(event_sender: UnboundedSender<Event>, seed: Seed) -> Surface
         if rng.random::<f32>() < 0.005 {
             insert_shape(
                 Shape::diamond(),
-                Properties::Sulfer,
+                Entity::Sulfer,
                 &mut grid,
                 idx,
                 &mut unbuildable,
@@ -116,9 +116,9 @@ pub async fn manual(event_sender: UnboundedSender<Event>, seed: Seed) -> Surface
         }
     }
 
-    for idx in 0..(GRID_SIZE * GRID_SIZE) {
+    for (idx, cell) in grid.iter_mut().enumerate() {
         if rng.random::<f32>() < 0.1 && !unbuildable.contains(&idx) {
-            grid[idx] = Gent::Intmd(Properties::Iron);
+            *cell = Gent::Intmd(Entity::Iron);
         }
     }
 
@@ -151,7 +151,7 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
     let mut grid: Vec<Gent> = vec![];
     for val in plane.iter() {
         if *val > 0.25 {
-            grid.push(Gent::Intmd(Properties::Iron));
+            grid.push(Gent::Intmd(Entity::Iron));
         } else {
             grid.push(Gent::Empty)
         }
@@ -166,6 +166,7 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
     }
 
     Surface {
+        version: VERSION,
         grid: Grid::new(grid),
         x: 0,
         y: 0,
@@ -184,6 +185,7 @@ pub fn empty(event_sender: UnboundedSender<Event>) -> Surface {
     let grid: Vec<Gent> = vec![];
     let grid = Grid::new(grid);
     Surface {
+        version: VERSION,
         grid,
         x: 0,
         y: 0,
@@ -202,17 +204,17 @@ pub async fn init_starting_entities(surface: &mut Surface) -> Result<(), AddEnti
     let mut fab = Fabricator::new();
 
     // push items needed to make smelter
-    let smelter_cost = Properties::Smelter.cost().expect("has cost");
-    for (prop, count) in smelter_cost.into_iter() {
+    let smelter_cost = Entity::Smelter.cost().expect("has cost");
+    for (entity, count) in smelter_cost.into_iter() {
         for _ in 0..count {
-            fab.place(prop)
+            fab.place(entity)
         }
     }
 
-    let lc_cost = Properties::LaserCutter.cost().expect("has cost");
-    for (prop, count) in lc_cost.into_iter() {
+    let lc_cost = Entity::LaserCutter.cost().expect("has cost");
+    for (entity, count) in lc_cost.into_iter() {
         for _ in 0..count {
-            fab.place(prop)
+            fab.place(entity)
         }
     }
 
@@ -231,13 +233,10 @@ pub async fn init_starting_entities(surface: &mut Surface) -> Result<(), AddEnti
         .add_agent(&Position::new(center - 2, center), Box::new(dog))
         .await?;
 
-    surface.add_entity(&Position::new(center + 1, center - 2), Properties::Iron)?;
-    surface.add_entity(&Position::new(center + 2, center - 2), Properties::Iron)?;
-    surface.add_entity(&Position::new(center + 5, center), Properties::SolarPannel)?;
-    surface.add_entity(
-        &Position::new(center + 5, center + 2),
-        Properties::Accumulator,
-    )?;
+    surface.add_entity(&Position::new(center + 1, center - 2), Entity::Iron)?;
+    surface.add_entity(&Position::new(center + 2, center - 2), Entity::Iron)?;
+    surface.add_entity(&Position::new(center + 5, center), Entity::SolarPannel)?;
+    surface.add_entity(&Position::new(center + 5, center + 2), Entity::Accumulator)?;
 
     Ok(())
 }
@@ -246,22 +245,22 @@ pub async fn init_starting_agent(surface: &mut Surface) -> Result<(), AddEntityE
     let mut fab = Fabricator::new();
 
     // push items needed to make dog
-    let dog_cost = Properties::Dog.cost().expect("dog has cost");
-    for (prop, count) in dog_cost.into_iter() {
+    let dog_cost = Entity::Dog.cost().expect("dog has cost");
+    for (entity, count) in dog_cost.into_iter() {
         for _ in 0..count {
-            fab.place(prop)
+            fab.place(entity)
         }
     }
 
     // push items needed to make smelter
-    let smelter_cost = Properties::Smelter.cost().expect("smelter has cost");
+    let smelter_cost = Entity::Smelter.cost().expect("smelter has cost");
     //let mut x = 0;
-    for (prop, count) in smelter_cost.into_iter() {
+    for (entity, count) in smelter_cost.into_iter() {
         for _ in 0..count {
-            fab.buffer_in.content.push(prop)
+            fab.buffer_in.content.push(entity)
             //let pos = Position::new(grid_center + (x), grid_center - 2);
             //x += 1;
-            //surface.add_entity(&pos, Gent::Intmd(prop))?;
+            //surface.add_entity(&pos, Gent::Intmd(entity))?;
         }
     }
 
@@ -270,7 +269,7 @@ pub async fn init_starting_agent(surface: &mut Surface) -> Result<(), AddEntityE
         .add_agent(&Position::new(grid_center, grid_center), Box::new(fab))
         .await?;
 
-    let solar_pannel = Properties::SolarPannel;
+    let solar_pannel = Entity::SolarPannel;
     let sp1 = Position {
         x: grid_center,
         y: grid_center + 4,
@@ -282,7 +281,7 @@ pub async fn init_starting_agent(surface: &mut Surface) -> Result<(), AddEntityE
     surface.add_entity(&sp1, solar_pannel)?;
     surface.add_entity(&sp2, solar_pannel)?;
 
-    let accumulator = Properties::Accumulator;
+    let accumulator = Entity::Accumulator;
     let acc1 = Position {
         x: grid_center,
         y: grid_center + 8,
@@ -304,7 +303,7 @@ pub async fn init_some_agents(surface: &mut Surface) -> Result<(), AddEntityErro
         .await?;
 
     let mut smelter = Smelter::new();
-    smelter.hearth = Some(Properties::Iron);
+    smelter.hearth = Some(Entity::Iron);
     surface
         .add_agent(&Position { x: 1, y: 8 }, Box::new(smelter))
         .await?;
@@ -314,12 +313,12 @@ pub async fn init_some_agents(surface: &mut Surface) -> Result<(), AddEntityErro
         .add_agent(&Position { x: 9, y: 2 }, Box::new(laser_cutter))
         .await?;
 
-    let solar_pannel = Properties::SolarPannel;
+    let solar_pannel = Entity::SolarPannel;
     let sp1 = Position { x: 2, y: 12 };
     let sp2 = Position { x: 6, y: 12 };
     surface.add_entity(&sp1, solar_pannel)?;
     surface.add_entity(&sp2, solar_pannel)?;
-    let accumulator = Properties::Accumulator;
+    let accumulator = Entity::Accumulator;
     let acc1 = Position { x: 2, y: 13 };
     let acc2 = Position { x: 4, y: 13 };
     let acc3 = Position { x: 7, y: 13 };
