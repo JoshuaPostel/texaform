@@ -1,5 +1,6 @@
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+
 use ratatui::layout::Position;
 use std::collections::{BTreeSet, HashSet};
 
@@ -287,6 +288,8 @@ impl std::fmt::Display for Shape {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
 
     #[test]
     fn test_format_shape() {
@@ -351,48 +354,14 @@ x...
         let expected = "XX
 X.
 ";
-        let mut result = Shape::wave(12, 0.2, true);
+        let mut rng = ChaCha8Rng::seed_from_u64(123);
+        let mut result = Shape::wave(&mut rng, 12, 0.2, true);
         println!("{result}");
         let result = result.translate(2, 0);
         println!("{result}");
         let result = result.translate(2, 0);
         println!("{result}");
-        //        let edge = Shape { positions: result.clone().edge() };
-        //        println!("{edge}");
-        //        result.jitter_edge();
-        //        println!("{result}");
-        //        result.jitter_edge();
-        //        println!("{result}");
-        //        result.jitter_edge();
-        //        println!("{result}");
-        //        result.jitter_edge();
-        //        println!("{result}");
-        //        result.jitter_edge();
-        //        println!("{result}");
 
         assert_eq!(expected, result.to_string());
     }
-
-    //    use crate::entities::properties::Properties;
-    //
-    //    #[test]
-    //    fn test_shape_from2() {
-    //        let input = "
-    //xx..
-    //x...
-    //....
-    //....
-    //";
-    //        let positions = [Position::new(0, 0), Position::new(1, 0), Position::new(0, 1)];
-    //        let positions = HashSet::from(positions);
-    //        let expected = Shape { positions };
-    //        let result = Shape::from(input);
-    //        let result = Shape::from(GEAR);
-    //        let result = Shape::from(NUT);
-    //        let p = Properties::Nut;
-    //        let result = p.shape().expect("");
-    //
-    //        assert_eq!(expected, result);
-    //    }
-    //
 }

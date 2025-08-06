@@ -6,7 +6,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::agents::Comms;
 use crate::agents::hud::Hud;
 use crate::app::AppResult;
-use crate::entities::Properties;
+use crate::entities::Entity;
 use crate::event::Event;
 use crate::tech_tree::Tech;
 use crate::tech_tree::TechTree;
@@ -17,6 +17,7 @@ use petgraph::graph::NodeIndex;
 use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
+use std::io::BufWriter;
 
 use serde_with::serde_as;
 
@@ -28,6 +29,7 @@ use crate::surface::{Power, Surface};
 #[serde_as]
 #[derive(Debug, Deserialize)]
 pub struct SurfaceState {
+    version: Version,
     x: usize,
     y: usize,
     pub grid: Grid,
@@ -38,15 +40,79 @@ pub struct SurfaceState {
     pub victory_stats: Option<VictoryStats>,
 }
 
+#[serde_as]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub struct Version {
+    major: u8,
+    minor: u8,
+    patch: u8,
+}
+
+// update upon release
+pub const VERSION: Version = Version {
+    major: 0,
+    minor: 1,
+    patch: 0,
+};
+
+impl Default for Version {
+    fn default() -> Version {
+        VERSION
+    }
+}
+
+impl std::fmt::Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl Version {
+    fn load(path: &std::path::Path) -> AppResult<Version> {
+        let save_file = File::open(path)?;
+        tracing::info!("save_file {save_file:?} opened");
+        let mut reader = BufReader::new(save_file);
+        tracing::info!("reader created");
+        // std::mem::size_of::<Version>() == 3 (3 `u8`s)
+        let config = bincode::config::standard().with_limit::<3>();
+        let version: Version = bincode::serde::decode_from_std_read(&mut reader, config)?;
+        tracing::info!("loaded version: {version}");
+        Ok(version)
+    }
+
+    fn compatible(&self) -> bool {
+        self.major == VERSION.major
+    }
+}
+
 impl SurfaceState {
+    pub fn save(surface: &Surface, name: String) -> AppResult<()> {
+        let mut save_path = crate::logging::get_data_dir();
+        save_path.push(name + ".texaform");
+        tracing::info!("saving to: {save_path:?}");
+        let save_file = File::create(save_path)?;
+        let mut writer = BufWriter::new(save_file);
+        tracing::info!("before save");
+        let config = bincode::config::standard().with_limit::<1_000_000>();
+        bincode::serde::encode_into_std_write(surface, &mut writer, config).unwrap();
+        tracing::info!("after save");
+        Ok(())
+    }
+
     pub fn load(path: &std::path::Path) -> AppResult<SurfaceState> {
         let save_file = File::open(path)?;
         tracing::info!("save_file {save_file:?} opened");
         let mut reader = BufReader::new(save_file);
         tracing::info!("reader created");
-        // TODO panics when deserializing different version of SurfaceState
-        // need to set limit on how much it can read
-        let surface_state: SurfaceState = bincode::deserialize_from(&mut reader)?;
+        let version = Version::load(path)?;
+        if !version.compatible() {
+            return Err(format!(
+                "save file format {version} is incompatible with texaform version {VERSION}"
+            )
+            .into());
+        }
+        let config = bincode::config::standard().with_limit::<1_000_000>();
+        let surface_state = bincode::serde::decode_from_std_read(&mut reader, config)?;
         tracing::info!("loading worked!");
         Ok(surface_state)
     }
@@ -57,6 +123,7 @@ impl SurfaceState {
         }
 
         Surface {
+            version: self.version,
             x: self.x,
             y: self.y,
             grid: self.grid,
@@ -125,6 +192,7 @@ impl Default for Seed {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameStats {
+    pub version: Version,
     pub seed: Seed,
     pub tick_count: u64,
     pub manual_command_count: u64,
@@ -142,9 +210,10 @@ impl std::fmt::Display for GameStats {
         let playtime = human_readable_tick_count(self.tick_count);
         write!(
             f,
-            "playtime: {}\n{}\nautomated commands: {}\nmanual commands: {}\ntechnology: {}/{}\ntotal agents: {}",
-            playtime,
+            "version: {}\n{}\nplaytime: {}\nautomated commands: {}\nmanual commands: {}\ntechnology: {}/{}\ntotal agents: {}",
+            self.version,
             self.seed.ui_string(),
+            playtime,
             self.tcp_command_count,
             self.manual_command_count,
             self.research_complete,
@@ -161,6 +230,7 @@ impl std::fmt::Display for GameStats {
 impl GameStats {
     pub fn new(seed: Seed, research_count: usize) -> GameStats {
         GameStats {
+            version: VERSION,
             seed,
             research_count,
             tick_count: 0,
@@ -180,7 +250,7 @@ pub struct VictoryStats {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameState {
-    pub unlocked_entities: HashSet<Properties>,
+    pub unlocked_entities: HashSet<Entity>,
     pub tech_tree: TechTree,
     pub tutorial_state: Tutorial,
     pub stats: GameStats,

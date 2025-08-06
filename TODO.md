@@ -1,30 +1,5 @@
 # TEXAFORM
 
-## FINISH BY END OF JULY
-submit to: https://github.com/ratatui/ratatui/discussions/1886
-
-## Priority TODO
-- [ ] finish playthrough
-  - change start to:
-    - [x] starting with dog
-    - [x] starting Focus is dog
-- [ ] polish polish polish
-- [x] make demo gif with https://github.com/charmbracelet/vhs
-- [x] try adding a second DOG at start
-- [x] update tutorial
-  - [x] place tutorial at top of screen
-  - [x] PICK char or name
-  - [x] move surface: arrows, page up/down, end/start
-- [x] update documentation
-  - [x] PICK char or name
-  - [x] fab MAKE
-  - [x] dog BULD
-- [x] lazer -> laser
-- [x] max size on comms log
-- [x] copy to clipboard functionality
-- [x] make PICK/LOAD/etc work with both character or screaming case name
-- [x] bug: dog DROP err already occupied destroys current payload
-
 ## milestone
 - [ ] do a playthrough
   - [x] smelter
@@ -39,12 +14,10 @@ submit to: https://github.com/ratatui/ratatui/discussions/1886
   - [ ] accumulator
     - [ ] build accumulator
   - [ ] run 5 dogs at once
-- [ ] record bugs
-- [x] document everything
-- [x] tweak energy levels
 
 ## python TODO
-- [x] handle goto that is occupied
+- [ ] deterministic random seed for reproducable testing
+- [ ] python implementation (bug reproducability) (later)
 - [ ] bug: dog gets stuck in this shape
   - see `bug_dog_stuck` save file
 ```
@@ -56,24 +29,19 @@ x >x
 
 ## playthrough missing features
 - [ ] add [C] and [ESC] to `load_game` text box
+    - [ ] try reworking some widgets into the component pattern
+      * https://ratatui.rs/concepts/application-patterns/component-architecture/
 - [ ] something fun when victory researched
   - [x] show victory screen or popup with run stats
     - [x] add command counter
     - [x] add random seed value
   - [x] implemented
   - [ ] tested
-- [x] random seed for deterministic
-  - [x] map generation
-  - [ ] python implementation (bug reproducability) (later)
-- [ ] version field in save file
-  - how to parse just this?
 - [ ] double click agent list centers surface on the agent
   - agents list should be implemented like the other lists
 
 ## bugs
 - [ ] rework `save_game` screen input
-- [ ] load game screen: memory allocation of ... bytes failed
-  * loading too much/not clearning memory?
 - [ ] focus on entity > dog picks entity > focus shoud `INTERNAL_DEV`
 - [ ] load game starts at top left (0, 0)
 - [ ] why is there a delay connecting to agents?
@@ -81,11 +49,9 @@ x >x
 ## low priority
 - [ ] use text list for agent list
 - [ ] unify text list and optional text list?
-- [ ] cargo: move from package/library to application/binary
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
 - [ ] clean up UI
   - [ ] when agent selected it is displayed twice (agent log and info)
-- [ ] CHEAT interface for fun, debugging, and creating test cases
 - [ ] add exit to pause menu
 - [ ] add continue to main menu
 - [ ] fabricator's BULD should check for room im `buffer_out`
@@ -95,17 +61,13 @@ x >x
   - [ ] "set color" change bg color of agent
   - [ ] "set name" give the dog a name
     - will this confilct with other features like focus?
-- [ ] internal code: rename Properties to Entities
 - [ ] render entities name in the UI with line() instead of kind() everywhere
   - [ ] documentation
   - [ ] agent list
 - [ ] implement uparrow/downarrow for manual command ui
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
-- [ ] remove either `color_eyre` or `anyhow`
-- [x] keybord navigation for everything
-  - [x] add [R] (or [T]?) for technology shortcut
-  - [x] controls pause menu item?
+- [x] internal code: rename Properties to Entities
 
 ## Future
 - [ ] fog of war
@@ -115,6 +77,8 @@ x >x
 - [ ] music
 - [ ] sound effects 
 - [ ] animations
+- [ ] CHEAT interface for fun, debugging, and creating test cases
+  - [ ] testing framework
 
 ## high level idea
 * you remote control various robots operating on a remote planetary body

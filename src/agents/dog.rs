@@ -1,5 +1,5 @@
 use crate::agents::{Agent, UpdateEnum};
-use crate::entities::{EntityContainer, Properties};
+use crate::entities::{Entity, EntityContainer};
 use crate::surface::Power;
 use crate::surface::grid::{Gent, Grid};
 use crate::surface::state::GameState;
@@ -125,8 +125,8 @@ impl Agent for Dog {
             self.battery = MAX_BATTERY.min(self.battery + 1);
         }
     }
-    fn properties(&self) -> Properties {
-        Properties::Dog
+    fn entity(&self) -> Entity {
+        Entity::Dog
     }
     fn render_fx(
         &mut self,
@@ -182,11 +182,11 @@ impl Agent for Dog {
         cell.fg = Color::White;
         cell.set_char(self.get_char());
     }
-    fn place(&mut self, prop: Properties) {
-        self.payload.place(prop);
+    fn place(&mut self, entity: Entity) {
+        self.payload.place(entity);
     }
 
-    fn placable(&self, _prop: &Properties) -> bool {
+    fn placable(&self, _entity: &Entity) -> bool {
         self.payload.placable()
     }
 }
@@ -230,24 +230,23 @@ impl Dog {
                     None => UpdateEnum::reply(Reply::ERRR("out of bounds".to_string())),
                 }
             }
-            Command::PICK(prop) => {
+            Command::PICK(entity) => {
                 if !self.payload.placable() {
                     UpdateEnum::reply(Reply::ERRR("already full".to_string()))
                 } else {
                     let forward = self.cordinites_forward(pos);
-                    match grid.pick(prop.character(), &forward) {
+                    match grid.pick(entity.character(), &forward) {
                         Some(gent) => {
                             self.payload.place(gent);
                             UpdateEnum::okay()
                         }
-                        None => UpdateEnum::reply(Reply::ERRR(format!("no {prop} to pick"))),
+                        None => UpdateEnum::reply(Reply::ERRR(format!("no {entity} to pick"))),
                     }
                 }
             }
             Command::CHRG => {
                 let forward = self.cordinites_forward(pos);
-                if Some(Properties::Accumulator) == grid.get(&forward).map(|gent| gent.properties())
-                {
+                if Some(Entity::Accumulator) == grid.get(&forward).map(|gent| gent.entity()) {
                     self.charging = true;
                     UpdateEnum::okay()
                 } else {
@@ -257,27 +256,27 @@ impl Dog {
             // TODO DESIGN: do we want ability to drop specific item?
             Command::DROP => {
                 let forward = self.cordinites_forward(pos);
-                if let Some(first_prop) = self.payload.pop() {
+                if let Some(first_entity) = self.payload.pop() {
                     match grid.get_mut(&forward) {
                         Some(Gent::Empty) => {
-                            grid.insert(&forward, Gent::Intmd(first_prop));
+                            grid.insert(&forward, Gent::Intmd(first_entity));
                             UpdateEnum::okay()
                         }
                         Some(Gent::Age(entity)) => {
-                            if entity.placable(&first_prop) {
-                                entity.place(first_prop);
+                            if entity.placable(&first_entity) {
+                                entity.place(first_entity);
                                 UpdateEnum::okay()
                             } else {
-                                self.payload.place(first_prop);
+                                self.payload.place(first_entity);
                                 UpdateEnum::reply(Reply::ERRR("cannot drop here".to_string()))
                             }
                         }
                         Some(_) => {
-                            self.payload.place(first_prop);
+                            self.payload.place(first_entity);
                             UpdateEnum::reply(Reply::ERRR("cannot drop here".to_string()))
                         }
                         None => {
-                            self.payload.place(first_prop);
+                            self.payload.place(first_entity);
                             UpdateEnum::reply(Reply::ERRR("out of bounds".to_string()))
                         }
                     }
@@ -286,8 +285,8 @@ impl Dog {
                 }
             }
             Command::BULD => {
-                if let Some(prop) = self.payload.pop() {
-                    if let Some(fp) = prop.footprint() {
+                if let Some(entity) = self.payload.pop() {
+                    if let Some(fp) = entity.footprint() {
                         if let (Some(x), Some(y)) = match self.facing {
                             CardinalDirection::North => (Some(pos.x), pos.y.checked_sub(fp.y)),
                             CardinalDirection::South => {
@@ -303,7 +302,7 @@ impl Dog {
                             width: fp.x,
                             height: fp.y,
                         }) {
-                            if let Ok(agent) = prop.create_agent() {
+                            if let Ok(agent) = entity.create_agent() {
                                 UpdateEnum::BuildAgent {
                                     pos: Position::new(x, y),
                                     agent,
@@ -311,14 +310,14 @@ impl Dog {
                             } else {
                                 UpdateEnum::BuildEntity {
                                     pos: Position::new(x, y),
-                                    entity: prop,
+                                    entity,
                                 }
                             }
                         } else {
-                            UpdateEnum::reply(Reply::ERRR(format!("location not buildable")))
+                            UpdateEnum::reply(Reply::ERRR("location not buildable".to_string()))
                         }
                     } else {
-                        UpdateEnum::reply(Reply::ERRR(format!("{prop} is not buildable")))
+                        UpdateEnum::reply(Reply::ERRR(format!("{entity} is not buildable")))
                     }
                 } else {
                     UpdateEnum::reply(Reply::ERRR("no payload to build".to_string()))
@@ -394,18 +393,9 @@ impl Dog {
                         (p1, p2, p3)
                     }
                 };
-                let c1 = grid
-                    .get(&p1)
-                    .map(|g| g.properties().character())
-                    .unwrap_or('.');
-                let c2 = grid
-                    .get(&p2)
-                    .map(|g| g.properties().character())
-                    .unwrap_or('.');
-                let c3 = grid
-                    .get(&p3)
-                    .map(|g| g.properties().character())
-                    .unwrap_or('.');
+                let c1 = grid.get(&p1).map(|g| g.entity().character()).unwrap_or('.');
+                let c2 = grid.get(&p2).map(|g| g.entity().character()).unwrap_or('.');
+                let c3 = grid.get(&p3).map(|g| g.entity().character()).unwrap_or('.');
                 let mut area = String::new();
                 area.push(c1);
                 area.push(c2);
@@ -486,9 +476,8 @@ impl Dog {
             "BULD" => Ok(Command::BULD),
             x if x.starts_with("PICK") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                //let kind = split.nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind) {
-                    Ok(Command::PICK(prop))
+                if let Some(entity) = Entity::from_user_input(kind) {
+                    Ok(Command::PICK(entity))
                 } else {
                     Err(format!("unknown entity {kind}"))
                 }
@@ -506,7 +495,7 @@ pub enum Direction {
 #[allow(clippy::upper_case_acronyms)]
 enum Command {
     TURN(Direction),
-    PICK(Properties),
+    PICK(Entity),
     MOVE,
     DROP,
     BULD,

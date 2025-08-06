@@ -1,12 +1,14 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Stylize},
     widgets::{Block, Paragraph},
 };
 
 use crate::app::{App, InputMode};
-use crate::ui::load_game::{render_save_file_metadata, render_save_file_preview};
+use crate::ui::load_game::{
+    render_save_file_metadata, render_save_file_preview, save_file_boarder,
+};
 use crate::ui::render_widget_clamped;
 
 #[derive(Debug, Default)]
@@ -52,9 +54,7 @@ impl SaveGameLayout {
 }
 
 pub fn render(app: &App, frame: &mut Frame) {
-    let border = Block::bordered()
-        .title("Save Files")
-        .style(Style::new().bg(Color::Black).fg(Color::Green));
+    let border = save_file_boarder();
     render_widget_clamped(frame, border, app.layout.save_game.save_files);
 
     render_widget_clamped(
@@ -88,7 +88,8 @@ pub fn render(app: &App, frame: &mut Frame) {
     };
     render_widget_clamped(
         frame,
-        app.save_button.with_content(Paragraph::new(label)),
+        app.save_button
+            .with_content(Paragraph::new(label).centered()),
         app.layout.save_game.save_button,
     );
 

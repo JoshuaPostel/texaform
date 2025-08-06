@@ -1,6 +1,6 @@
 use crate::agents::{Agent, UpdateEnum};
 use crate::entities::shape::Shape;
-use crate::entities::{EntityContainer, PickResult, Properties};
+use crate::entities::{Entity, EntityContainer, PickResult};
 use crate::surface::Power;
 use crate::surface::grid::Grid;
 use crate::surface::state::GameState;
@@ -73,7 +73,7 @@ pub struct LaserCutter {
     pub y_servo: usize,
 
     pub plate: Vec<State>,
-    pub plate_kind: Option<Properties>,
+    pub plate_kind: Option<Entity>,
 
     pub laser_is_on: bool,
 
@@ -113,8 +113,8 @@ impl Agent for LaserCutter {
 
     fn tick(&mut self, _power: &mut Power) {}
 
-    fn properties(&self) -> Properties {
-        Properties::LaserCutter
+    fn entity(&self) -> Entity {
+        Entity::LaserCutter
     }
     fn pick(&mut self, c: char) -> PickResult {
         let pick_result = self.buffer_out.pick(c);
@@ -125,11 +125,11 @@ impl Agent for LaserCutter {
         }
     }
 
-    fn placable(&self, _prop: &Properties) -> bool {
+    fn placable(&self, _entity: &Entity) -> bool {
         self.buffer_in.placable()
     }
-    fn place(&mut self, prop: Properties) {
-        self.buffer_in.place(prop);
+    fn place(&mut self, entity: Entity) {
+        self.buffer_in.place(entity);
     }
 }
 
@@ -237,7 +237,7 @@ impl LaserCutter {
                 tracing::info!("p: {p:?}");
                 let (expected_material, expected_shape) = p
                     .material_and_shape()
-                    .expect("command only accepts properties with a shape");
+                    .expect("command only accepts entity with a shape");
                 if Some(expected_material) != self.plate_kind {
                     return UpdateEnum::reply("ERRR incorrect material");
                 }
@@ -268,23 +268,23 @@ impl LaserCutter {
                     UpdateEnum::reply("ERRR shape does not match")
                 }
             }
-            Command::LOAD(prop) => {
+            Command::LOAD(entity) => {
                 if self.laser_is_on {
                     return UpdateEnum::reply("ERRR laser is on");
                 }
-                // TODO match prop
+                // TODO match entity
                 // TODO bug here: need to have method on buffer_in to remove entity
                 // otherwise we forget to update buffer_in display
-                match self.buffer_in.remove_entity(&prop) {
+                match self.buffer_in.remove_entity(&entity) {
                     Ok(_) => {
                         // TODO implement scrap system
                         //let amount = self.plate.iter().filter(|x| **x == State::Uncut).count();
                         //self.buffer_out.place(Properties::Scrap(amount));
                         self.plate = vec![State::Uncut; PLATE_WIDTH * PLATE_HEIGHT];
-                        self.plate_kind = Some(prop);
+                        self.plate_kind = Some(entity);
                         UpdateEnum::okay()
                     }
-                    Err(_) => UpdateEnum::reply(format!("ERRR {prop}")),
+                    Err(_) => UpdateEnum::reply(format!("ERRR {entity}")),
                 }
             }
             Command::MVXP => {
@@ -334,9 +334,9 @@ impl LaserCutter {
             "MVYN" => Ok(Command::MVYN),
             x if x.starts_with("LOAD") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind) {
-                    if prop.cuttable() {
-                        Ok(Command::LOAD(prop))
+                if let Some(entity) = Entity::from_user_input(kind) {
+                    if entity.cuttable() {
+                        Ok(Command::LOAD(entity))
                     } else {
                         Err(format!("cannot cut {kind}"))
                     }
@@ -346,9 +346,9 @@ impl LaserCutter {
             }
             x if x.starts_with("PICK") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind) {
-                    if let Some(_) = prop.material_and_shape() {
-                        Ok(Command::PICK(prop))
+                if let Some(entity) = Entity::from_user_input(kind) {
+                    if entity.material_and_shape().is_some() {
+                        Ok(Command::PICK(entity))
                     } else {
                         Err(format!("{kind} is not made in laser cutter"))
                     }
@@ -364,8 +364,8 @@ impl LaserCutter {
 #[allow(clippy::upper_case_acronyms)]
 enum Command {
     POWR,
-    PICK(Properties),
-    LOAD(Properties),
+    PICK(Entity),
+    LOAD(Entity),
     MVXP,
     MVXN,
     MVYP,
@@ -522,7 +522,6 @@ impl Solver {
     }
 }
 
-// TODO make *_to_* and *_from_* functions proper From<> implementations
 #[cfg(test)]
 mod tests {
     use super::*;

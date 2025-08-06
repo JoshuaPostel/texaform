@@ -1,8 +1,8 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Style},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Paragraph, block::Title},
 };
 
 use crate::app::{App, LoadingState};
@@ -43,9 +43,7 @@ impl LoadGameLayout {
 }
 
 pub fn render(app: &App, frame: &mut Frame) {
-    let border = Block::bordered()
-        .title("Save Files")
-        .style(Style::new().bg(Color::Black).fg(Color::Green));
+    let border = save_file_boarder();
     render_widget_clamped(frame, border, app.layout.load_game.save_files);
 
     render_widget_clamped(
@@ -61,6 +59,15 @@ pub fn render(app: &App, frame: &mut Frame) {
         app.previous_screen_button.clone(),
         app.layout.previous_screen_button,
     );
+}
+
+pub fn save_file_boarder() -> Block<'static> {
+    let data_dir = crate::logging::get_data_dir();
+    let save_dir = data_dir.to_string_lossy().into_owned(); //.expect("data dir is valid str");
+    Block::bordered()
+        .title("Save Files─")
+        .title(Title::from(save_dir).alignment(Alignment::Right))
+        .style(Style::new().bg(Color::Black).fg(Color::Green))
 }
 
 pub fn render_save_file_preview(app: &App, frame: &mut Frame) {
@@ -113,7 +120,7 @@ pub fn render_save_file_metadata(app: &App, frame: &mut Frame) {
     };
 
     let paragraph = Paragraph::new(content)
-        .block(Block::bordered().title("Metadata"))
+        .block(Block::bordered().title("Game Statistics"))
         .style(Style::default().fg(Color::Green).bg(Color::Black));
     render_widget_clamped(frame, paragraph, app.layout.load_game.metadata);
 }

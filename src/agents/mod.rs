@@ -4,8 +4,9 @@ pub mod hud;
 pub mod laser_cutter;
 pub mod smelter;
 
+use crate::AppResult;
+use crate::entities::Entity;
 use crate::entities::PickResult;
-use crate::entities::Properties;
 use crate::event::Event;
 use crate::surface::Power;
 use crate::surface::Surface;
@@ -42,15 +43,15 @@ pub trait Agent: std::fmt::Debug + WidgetRef {
         msg: String,
     ) -> UpdateEnum;
 
-    fn properties(&self) -> Properties;
+    fn entity(&self) -> Entity;
     fn tick(&mut self, _power: &mut Power) {}
     fn on_init(&self, _power: &mut Power) {}
     fn render_surface_cell(&self, offset: &Position, cell: &mut Cell) {
         cell.bg = Color::DarkGray;
         if offset == &Position::new(0, 0) {
-            cell.set_char(self.properties().character());
+            cell.set_char(self.entity().character());
         } else {
-            cell.set_char(self.properties().character().to_ascii_lowercase());
+            cell.set_char(self.entity().character().to_ascii_lowercase());
         }
     }
     // this is good for rendering effects that follow a moving entity.
@@ -69,10 +70,10 @@ pub trait Agent: std::fmt::Debug + WidgetRef {
     }
 
     /// implement if dog can place entites into this entity
-    fn placable(&self, _prop: &Properties) -> bool {
+    fn placable(&self, _entity: &Entity) -> bool {
         false
     }
-    fn place(&mut self, _prop: Properties) {}
+    fn place(&mut self, _entity: Entity) {}
 
     // TODO replace with requiring Default trait
     fn new() -> Self
@@ -91,7 +92,7 @@ pub enum UpdateEnum {
     },
     BuildEntity {
         pos: Position,
-        entity: Properties,
+        entity: Entity,
     },
     Reply(String),
     Move(Position),
@@ -114,7 +115,7 @@ pub struct Update {
     pub position: Option<Position>,
     //pub build_agent: Option<Box<dyn Agent + 'static>>,
     pub build_agent: Option<Box<dyn Agent + 'static>>,
-    pub build_intermediate: Option<Properties>,
+    pub build_intermediate: Option<Entity>,
 }
 
 impl Update {
@@ -158,12 +159,12 @@ impl Update {
             build_intermediate: None,
         }
     }
-    pub fn build_intermediate(position: Position, properties: Properties) -> Update {
+    pub fn build_intermediate(position: Position, entity: Entity) -> Update {
         Update {
             reply: "NEED TO RETURN PORT".to_string(),
             position: Some(position),
             build_agent: None,
-            build_intermediate: Some(properties),
+            build_intermediate: Some(entity),
         }
     }
 }
@@ -223,7 +224,7 @@ impl CommLogs {
 pub struct Comms {
     // TODO state to be saved/loaded
     pub port: usize,
-    pub entity: Properties,
+    pub entity: Entity,
     pub position: Option<Position>,
     pub location: Option<Rect>,
     // TODO limit the size
@@ -265,7 +266,7 @@ impl Comms {
             .expect("reply_sender inited properly")
     }
 
-    pub async fn new(surface: &Surface, location: Option<Rect>, agent_kind: Properties) -> Comms {
+    pub async fn new(surface: &Surface, location: Option<Rect>, agent_kind: Entity) -> Comms {
         let port = surface.next_available_port();
         tracing::info!("here: {port}");
         let event_sender = surface.event_sender.clone();
@@ -292,7 +293,7 @@ impl Comms {
 async fn spawn_handler<R: Display + Send + 'static>(
     port: usize,
     event_sender: UnboundedSender<Event>,
-) -> color_eyre::Result<(Sender<R>, DropHandle)> {
+) -> AppResult<(Sender<R>, DropHandle)> {
     let listener = TcpListener::bind(format!("127.0.0.1:{port}")).await?;
     tracing::info!("started tcp listener on port {port}");
 

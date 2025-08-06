@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use crate::agents::{Agent, UpdateEnum};
-use crate::entities::contains_cost;
-use crate::entities::{EntityContainer, PickResult, Properties};
+use crate::entities::{Entity, EntityContainer, PickResult};
 use crate::surface::grid::Grid;
 use crate::surface::state::GameState;
 
@@ -66,8 +67,8 @@ impl Agent for Fabricator {
         }
     }
 
-    fn properties(&self) -> Properties {
-        Properties::Fabricator
+    fn entity(&self) -> Entity {
+        Entity::Fabricator
     }
     fn pick(&mut self, c: char) -> PickResult {
         let buffer_out_pr = self.buffer_out.pick(c);
@@ -78,12 +79,17 @@ impl Agent for Fabricator {
         }
     }
 
-    fn placable(&self, _prop: &Properties) -> bool {
+    fn placable(&self, _entity: &Entity) -> bool {
         self.buffer_in.placable()
     }
-    fn place(&mut self, prop: Properties) {
-        self.buffer_in.place(prop)
+    fn place(&mut self, entity: Entity) {
+        self.buffer_in.place(entity)
     }
+}
+
+fn contains_cost(buffer: &[Entity], cost: &HashMap<Entity, u8>) -> bool {
+    cost.iter()
+        .all(|(entity, count)| *count <= buffer.iter().filter(|&p| p == entity).count() as u8)
 }
 
 impl Fabricator {
@@ -118,9 +124,9 @@ impl Fabricator {
                     UpdateEnum::reply(Reply::ERRR("no active research".to_string()))
                 }
             }
-            Command::MAKE(properties) => {
-                let kind_unlocked = game_state.unlocked_entities.contains(&properties);
-                let cost = &properties
+            Command::MAKE(entity) => {
+                let kind_unlocked = game_state.unlocked_entities.contains(&entity);
+                let cost = &entity
                     .cost()
                     .expect("checked existance when parsing the command");
                 let contains_materials = contains_cost(&self.buffer_in.content, cost);
@@ -130,7 +136,7 @@ impl Fabricator {
                     UpdateEnum::reply(Reply::ERRR("insufficent materials".to_string()))
                 } else {
                     self.buffer_in.remove_content(cost).expect("CHECKED");
-                    self.buffer_out.place(properties);
+                    self.buffer_out.place(entity);
                     UpdateEnum::okay()
                 }
             }
@@ -141,8 +147,8 @@ impl Fabricator {
         match msg {
             x if x.starts_with("MAKE") => {
                 let kind = x.split_whitespace().nth(1).unwrap_or_default();
-                if let Some(prop) = Properties::from_user_input(kind) {
-                    Ok(Command::MAKE(prop))
+                if let Some(entity) = Entity::from_user_input(kind) {
+                    Ok(Command::MAKE(entity))
                 } else {
                     Err(format!("unknown entity {kind}"))
                 }
@@ -156,7 +162,7 @@ impl Fabricator {
 
 #[allow(clippy::upper_case_acronyms)]
 enum Command {
-    MAKE(Properties),
+    MAKE(Entity),
     RESR,
     STAT,
 }

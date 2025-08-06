@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
-use color_eyre::eyre;
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{self, Layer, layer::SubscriberExt, util::SubscriberInitExt};
+
+use crate::AppResult;
 
 lazy_static! {
     pub static ref PROJECT_NAME: String = env!("CARGO_CRATE_NAME").to_uppercase().to_string();
@@ -21,8 +22,6 @@ fn project_directory() -> Option<ProjectDirs> {
 }
 
 pub fn get_data_dir() -> PathBuf {
-    // for when you forget where the logs go
-    // println!("{directory:?}");
     if let Some(s) = DATA_FOLDER.clone() {
         s
     } else if let Some(proj_dirs) = project_directory() {
@@ -32,7 +31,7 @@ pub fn get_data_dir() -> PathBuf {
     }
 }
 
-pub fn initialize_logging() -> eyre::Result<()> {
+pub fn initialize_logging() -> AppResult<()> {
     let directory = get_data_dir();
     //println!("{:?}", directory);
     //panic!("");

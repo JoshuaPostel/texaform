@@ -241,7 +241,7 @@ fn render_info(app: &App, frame: &mut Frame) {
                 let cords = format!("[{}, {}]", pos.x, pos.y);
                 Block::bordered()
                     .title(cords)
-                    .title(gent.properties().line())
+                    .title(gent.entity().line())
                     .title(Title::from(surface_cords).alignment(Alignment::Right))
                     .style(DEFAULT_STYLE)
                     .render(area, buf);
@@ -258,7 +258,7 @@ fn render_info(app: &App, frame: &mut Frame) {
                     let cords = format!("[{}, {}]", pos.x, pos.y);
                     Block::bordered()
                         .title(cords)
-                        .title(gent.properties().line())
+                        .title(gent.entity().line())
                         .title(Title::from(surface_cords).alignment(Alignment::Right))
                         .style(DEFAULT_STYLE)
                         .render(area, buf);
@@ -283,7 +283,7 @@ fn render_agents_list(app: &App, frame: &mut Frame) {
     for (port, comms) in app.surface.agents.iter() {
         if let Some(pos) = comms.position {
             if let Some(gent) = app.surface.grid.get(&pos) {
-                agents.push(format!("{:?} {}", port, gent.properties().to_string()))
+                agents.push(format!("{:?} {}", port, gent.entity()))
             }
         } else {
             agents.push(format!("{port:?} HUD"))
@@ -330,7 +330,7 @@ fn render_surface_overlay(app: &App, frame: &mut Frame) {
             let agent = app.surface.get_agent(port);
             match (grid_pos, agent) {
                 (Some(grid_pos), Some(agent)) => {
-                    highlight(&grid_pos, agent.properties().footprint(), &app.surface, buf);
+                    highlight(&grid_pos, agent.entity().footprint(), &app.surface, buf);
                 }
                 _ => tracing::error!("expected agent at port {port}"),
             }
@@ -338,8 +338,8 @@ fn render_surface_overlay(app: &App, frame: &mut Frame) {
         Some(Focus::Position(grid_pos)) => match app.surface.grid.get_direct(grid_pos) {
             Some(Gent::Intmd(p)) => highlight(grid_pos, p.footprint(), &app.surface, buf),
             Some(Gent::Large(pos)) => {
-                if let Some(Gent::Intmd(prop)) = app.surface.grid.get(pos) {
-                    highlight(pos, prop.footprint(), &app.surface, buf)
+                if let Some(Gent::Intmd(entity)) = app.surface.grid.get(pos) {
+                    highlight(pos, entity.footprint(), &app.surface, buf)
                 }
             }
             Some(Gent::Empty) => highlight(grid_pos, None, &app.surface, buf),

@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKin
 use ratatui::layout::Position;
 
 use crate::input::load_game::load_selected_save_file;
+use crate::surface::state::SurfaceState;
 use crate::widgets::text_box::TextBox;
 
 use crate::ui::Screen;
@@ -20,7 +21,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                     // TODO
                     //app.surface.update_agent_manual(&port).await;
                     tracing::info!("surface pre save: {:?}", app.surface);
-                    app.surface.save(app.save_screen_text_box.input.clone());
+                    SurfaceState::save(&app.surface, app.save_screen_text_box.input.clone())?;
                     app.set_screen(Screen::PauseMenu);
                 }
                 KeyCode::Char(to_insert) => {
@@ -58,7 +59,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
             }
             KeyCode::Enter => {
                 tracing::info!("surface pre save: {:?}", app.surface);
-                app.surface.save(app.save_screen_text_box.input.clone());
+                SurfaceState::save(&app.surface, app.save_screen_text_box.input.clone())?;
                 app.set_screen(Screen::PauseMenu);
             }
             _ => {}

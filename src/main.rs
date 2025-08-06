@@ -13,15 +13,49 @@ use std::{
     io::{self, stdout},
     panic::{set_hook, take_hook},
 };
-use texaform::app::{App, AppResult, InputMode};
-use texaform::event::{Event, EventHandler};
-use texaform::logging::initialize_logging;
-use texaform::tui::Tui;
-use texaform::ui::AppLayout;
 
-use texaform::input::{handle_key_events, handle_mouse_events};
+/// Application.
+pub mod app;
 
-use texaform::TICK_UPDATE_MILLS;
+/// Terminal events handler.
+pub mod event;
+
+pub mod effects;
+/// Widget renderer.
+pub mod ui;
+
+/// Terminal user interface.
+pub mod tui;
+
+/// Event handler.
+pub mod input;
+pub mod logging;
+
+//pub mod grid;
+pub mod surface;
+//pub mod generation;
+
+pub mod tcp;
+pub mod utils;
+
+pub mod agents;
+pub mod entities;
+
+pub mod puzzles;
+pub mod tech_tree;
+
+pub mod draw;
+pub mod theme;
+pub mod widgets;
+
+use app::{App, AppResult, InputMode};
+use event::{Event, EventHandler};
+use input::{handle_key_events, handle_mouse_events};
+use logging::initialize_logging;
+use tui::Tui;
+use ui::AppLayout;
+
+const TICK_UPDATE_MILLS: u64 = 250;
 
 #[tokio::main]
 async fn main() -> AppResult<()> {

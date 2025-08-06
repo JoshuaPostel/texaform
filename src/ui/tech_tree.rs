@@ -91,8 +91,8 @@ pub fn render_research_description(app: &App, frame: &mut Frame, _area: Rect) {
             for (entity, count) in &tech.cost {
                 description.push_str(&format!("  {entity}: {count}\n"));
             }
-            if let Some(prop) = tech.unlocks {
-                description.push_str(&format!("\nunlocks: {prop}\n"))
+            if let Some(entity) = tech.unlocks {
+                description.push_str(&format!("\nunlocks: {entity}\n"))
             }
             (format!(": {}", tech.kind), description)
         }
@@ -103,7 +103,7 @@ pub fn render_research_description(app: &App, frame: &mut Frame, _area: Rect) {
         ),
     };
     let paragraph = Paragraph::new(content)
-        .block(Block::bordered().title(format!("Research Information{}", title)))
+        .block(Block::bordered().title(format!("Research Information{title}")))
         .wrap(Wrap { trim: false })
         .style(Style::default().fg(Color::Green).bg(Color::Black));
 

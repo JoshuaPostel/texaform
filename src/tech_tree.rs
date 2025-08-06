@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use ratatui::layout::{Constraint, Flex, Layout, Margin, Position, Rect};
 use strum_macros;
 
-use crate::entities::Properties;
+use crate::entities::Entity;
 use crate::ui::tech_tree::EdgeLayout;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,64 +31,64 @@ impl Default for TechTree {
 
         let smelter = Tech {
             kind: TechKind::Smelter,
-            cost: HashMap::from([(Properties::Iron, 1)]),
+            cost: HashMap::from([(Entity::Iron, 1)]),
             progress_numerator: 0,
             progress_denominator: 2,
             unlocked: false,
-            unlocks: Some(Properties::Smelter),
+            unlocks: Some(Entity::Smelter),
         };
         let root = graph.add_node(smelter);
 
         let laser_cutter = Tech {
             kind: TechKind::LaserCutter,
-            cost: HashMap::from([(Properties::IronPlate, 1), (Properties::CopperPlate, 1)]),
+            cost: HashMap::from([(Entity::IronPlate, 1), (Entity::CopperPlate, 1)]),
             progress_numerator: 0,
             progress_denominator: 2,
             unlocked: false,
-            unlocks: Some(Properties::LaserCutter),
+            unlocks: Some(Entity::LaserCutter),
         };
         graph.add_node(laser_cutter);
 
         graph.add_node(Tech::new(
             TechKind::SolarPannel,
-            HashMap::from([(Properties::CopperPlate, 1), (Properties::Wafer, 1)]),
-            Some(Properties::SolarPannel),
+            HashMap::from([(Entity::CopperPlate, 1), (Entity::Wafer, 1)]),
+            Some(Entity::SolarPannel),
         ));
         graph.add_node(Tech::new(
             TechKind::Battery,
-            HashMap::from([(Properties::IronPlate, 1), (Properties::Sulfer, 1)]),
-            Some(Properties::Battery),
+            HashMap::from([(Entity::IronPlate, 1), (Entity::Sulfer, 1)]),
+            Some(Entity::Battery),
         ));
         let fabricator = Tech {
             kind: TechKind::Fabricator,
-            cost: HashMap::from([(Properties::Nut, 2)]),
+            cost: HashMap::from([(Entity::Nut, 2)]),
             progress_numerator: 0,
             progress_denominator: 4,
             unlocked: false,
-            unlocks: Some(Properties::Fabricator),
+            unlocks: Some(Entity::Fabricator),
         };
         graph.add_node(fabricator);
         graph.add_node(Tech::new(
             TechKind::Dog,
             HashMap::from([
-                (Properties::Gear, 1),
-                (Properties::Battery, 1),
-                (Properties::SolarPannel, 1),
+                (Entity::Gear, 1),
+                (Entity::Battery, 1),
+                (Entity::SolarPannel, 1),
             ]),
-            Some(Properties::Dog),
+            Some(Entity::Dog),
         ));
         let accumulator = Tech {
             kind: TechKind::Accumulator,
-            cost: HashMap::from([(Properties::Battery, 2)]),
+            cost: HashMap::from([(Entity::Battery, 2)]),
             progress_numerator: 0,
             progress_denominator: 4,
             unlocked: false,
-            unlocks: Some(Properties::Accumulator),
+            unlocks: Some(Entity::Accumulator),
         };
         graph.add_node(accumulator);
         let self_sufficent = Tech {
             kind: TechKind::SelfSufficient,
-            cost: HashMap::from([(Properties::Dog, 1)]),
+            cost: HashMap::from([(Entity::Dog, 1)]),
             progress_numerator: 0,
             progress_denominator: 10,
             unlocked: false,
@@ -149,11 +149,11 @@ impl Default for TechTree {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tech {
     pub kind: TechKind,
-    pub cost: HashMap<Properties, u8>,
+    pub cost: HashMap<Entity, u8>,
     pub progress_numerator: u8,
     pub progress_denominator: u8,
     pub unlocked: bool,
-    pub unlocks: Option<Properties>,
+    pub unlocks: Option<Entity>,
 }
 
 // TODO rename Tech to TechNode?
@@ -187,7 +187,7 @@ impl Default for Tech {
 }
 
 impl Tech {
-    pub fn new(kind: TechKind, cost: HashMap<Properties, u8>, unlocks: Option<Properties>) -> Tech {
+    pub fn new(kind: TechKind, cost: HashMap<Entity, u8>, unlocks: Option<Entity>) -> Tech {
         Tech {
             kind,
             cost,
@@ -313,7 +313,7 @@ impl TechTree {
             .map(|n| n.index())
     }
 
-    pub fn progress(&mut self, node_idx: usize) -> Option<Properties> {
+    pub fn progress(&mut self, node_idx: usize) -> Option<Entity> {
         if Some(node_idx) == self.research_node
             && let Some(tech) = self.researching_mut()
         {

@@ -1,5 +1,5 @@
 use crate::agents::{Agent, UpdateEnum};
-use crate::entities::{EntityContainer, PickResult, Properties};
+use crate::entities::{Entity, EntityContainer, PickResult};
 use crate::surface::Power;
 use crate::surface::grid::Grid;
 use crate::surface::state::GameState;
@@ -78,7 +78,7 @@ pub struct Smelter {
     pub powered_on: bool,
     pub progress: u8,
     pub integrity: u8,
-    pub hearth: Option<Properties>,
+    pub hearth: Option<Entity>,
     pub buffer_in: EntityContainer,
     pub buffer_out: EntityContainer,
 }
@@ -146,8 +146,8 @@ impl Agent for Smelter {
         }
     }
 
-    fn properties(&self) -> Properties {
-        Properties::Smelter
+    fn entity(&self) -> Entity {
+        Entity::Smelter
     }
     fn render_surface_cell(&self, offset: &Position, cell: &mut Cell) {
         // TODO performance: store this somewhere so we dont recreate for each cell
@@ -159,9 +159,9 @@ impl Agent for Smelter {
         cell.fg = fg;
         cell.bg = Color::DarkGray;
         if offset == &Position::new(0, 0) {
-            cell.set_char(self.properties().character());
+            cell.set_char(self.entity().character());
         } else {
-            cell.set_char(self.properties().character().to_ascii_lowercase());
+            cell.set_char(self.entity().character().to_ascii_lowercase());
         }
     }
     fn pick(&mut self, c: char) -> PickResult {
@@ -173,11 +173,11 @@ impl Agent for Smelter {
         }
     }
 
-    fn placable(&self, _prop: &Properties) -> bool {
+    fn placable(&self, _entity: &Entity) -> bool {
         self.buffer_in.placable()
     }
-    fn place(&mut self, prop: Properties) {
-        self.buffer_in.place(prop);
+    fn place(&mut self, entity: Entity) {
+        self.buffer_in.place(entity);
     }
 }
 
