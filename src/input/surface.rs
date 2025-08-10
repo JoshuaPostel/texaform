@@ -10,48 +10,36 @@ use std::io::BufReader;
 use crate::surface::grid::Gent;
 use crate::surface::{Focus, tutorial::Tutorial};
 use crate::ui::Screen;
+use crate::widgets::HandleInput;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+    let msg = app
+        .surface
+        .focused_agent_comms_mut()
+        .and_then(|comms| comms.text_box.handle_key_event(key_event));
+    if let Some(msg) = msg {
+        app.surface.update_agent_manual(&1234, msg).await;
+    }
+    //
+    //    if let Some(port) = app.surface.focused_agent_port()
+    //        && let Some(comms) = app.surface.agents.get_mut(&port)
+    //    {
+    //        if let Some(msg) = comms.text_box.handle_key_event(key_event) {
+    //            app.surface.update_agent_manual(&port, msg).await;
+    //        }
+    //    }
+
     match app.input_mode {
         // TODO will need to adjust if we need other text_boxes
         InputMode::Editing => {
-            if let Some(port) = app.surface.focused_agent_port() {
-                match key_event.code {
-                    KeyCode::Esc => {
-                        app.input_mode = InputMode::Normal;
-                    }
-                    KeyCode::Enter => {
-                        app.surface.update_agent_manual(&port).await;
-                    }
-                    KeyCode::Char(to_insert) => {
-                        if let Some(comms) = app.surface.agents.get_mut(&port) {
-                            comms.text_box.enter_char(to_insert.to_ascii_uppercase());
-                        } else {
-                            tracing::warn!("expected agent at port {port}");
-                        }
-                    }
-                    KeyCode::Backspace => {
-                        if let Some(comms) = app.surface.agents.get_mut(&port) {
-                            comms.text_box.delete_char();
-                        } else {
-                            tracing::warn!("expected agent at port {port}");
-                        }
-                    }
-                    KeyCode::Left => {
-                        if let Some(comms) = app.surface.agents.get_mut(&port) {
-                            comms.text_box.move_cursor_left();
-                        } else {
-                            tracing::warn!("expected agent at port {port}");
-                        }
-                    }
-                    KeyCode::Right => {
-                        if let Some(comms) = app.surface.agents.get_mut(&port) {
-                            comms.text_box.move_cursor_right();
-                        } else {
-                            tracing::warn!("expected agent at port {port}");
-                        }
-                    }
-                    _ => {}
+            if key_event.code == KeyCode::Esc {
+                app.input_mode = InputMode::Normal;
+            }
+            if let Some(port) = app.surface.focused_agent_port()
+                && let Some(comms) = app.surface.agents.get_mut(&port)
+            {
+                if let Some(msg) = comms.text_box.handle_key_event(key_event) {
+                    app.surface.update_agent_manual(&port, msg).await;
                 }
             }
         }

@@ -4,7 +4,7 @@ use ratatui::layout::Position;
 
 use crate::input::load_game::load_selected_save_file;
 use crate::surface::state::SurfaceState;
-use crate::widgets::text_box::TextBox;
+use crate::widgets::{text_box::TextBox, HandleInput};
 
 use crate::ui::Screen;
 
@@ -12,6 +12,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
     match app.input_mode {
         InputMode::Editing => {
             let text_box = &mut app.save_screen_text_box;
+            text_box.handle_key_event(key_event);
             match key_event.code {
                 KeyCode::Esc => {
                     // TODO why is there delay/lag in this branch?
