@@ -109,7 +109,7 @@ impl AppLayout {
             pause_menu: pause_menu::PauseMenuLayout::new(width, height),
             surface: surface::SurfaceLayout::new(width, height),
             load_game: load_game::LoadGameLayout::new(width, height),
-            save_game: save_game::SaveGameLayout::new(width, height),
+            save_game: save_game::SaveGameLayout::new(width, height, app),
             documentation: documentation::DocumentationLayout::new(width, height, app),
             tech_tree: tech_tree::TechTreeLayout::new(width, height, app),
         }
@@ -154,12 +154,12 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             // not rendered in documentation::render so that render_fx does not apply to the button
             render_widget_clamped(
                 frame,
-                app.previous_screen_button.clone(),
+                &app.previous_screen_button,
                 app.layout.previous_screen_button,
             );
             render_widget_clamped(
                 frame,
-                app.copy_button.clone(),
+                &app.copy_button,
                 app.layout.documentation.copy_button,
             );
         }

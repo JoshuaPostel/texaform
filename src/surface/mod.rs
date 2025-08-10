@@ -543,34 +543,31 @@ impl Surface {
         self.game_state.stats.manual_command_count += 1;
         // TODO use unsafe mem::swap directly avoiding the push and pop
         // see source code of swap(a, b)
-//        let reply = if let Some(pos) = self.agent_position(port) {
-//            let gent = self.grid.pop(&pos);
-//            if let Some(Gent::Age(agent)) = gent {
-//                self.update_agent(msg.clone(), pos, port, agent).await
-//            } else {
-//                tracing::error!("expected agent at {pos:?}");
-//                return;
-//            }
-//        } else {
-//            self.handle_hud_command(msg.clone()).to_string()
-//        };
+        //        let reply = if let Some(pos) = self.agent_position(port) {
+        //            let gent = self.grid.pop(&pos);
+        //            if let Some(Gent::Age(agent)) = gent {
+        //                self.update_agent(msg.clone(), pos, port, agent).await
+        //            } else {
+        //                tracing::error!("expected agent at {pos:?}");
+        //                return;
+        //            }
+        //        } else {
+        //            self.handle_hud_command(msg.clone()).to_string()
+        //        };
         let reply = self.handle_message(port, msg.clone()).await;
         if let Some(comms) = self.agents.get_mut(port) {
             comms.log.push((msg, reply));
         }
-//        } else {
-//            tracing::warn!("expected agent at port {port}");
-//        }
+        //        } else {
+        //            tracing::warn!("expected agent at port {port}");
+        //        }
     }
 
-    async fn handle_message(
-        &mut self,
-        port: &usize,
-        msg: String,
-    ) -> String {
+    async fn handle_message(&mut self, port: &usize, msg: String) -> String {
         if let Some(pos) = self.agent_position(port)
-            && let Some(Gent::Age(agent)) = self.grid.pop(&pos) {
-                self.update_agent(msg.clone(), pos, port, agent).await
+            && let Some(Gent::Age(agent)) = self.grid.pop(&pos)
+        {
+            self.update_agent(msg.clone(), pos, port, agent).await
         } else {
             self.handle_hud_command(msg.clone()).to_string()
         }

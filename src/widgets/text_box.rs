@@ -15,8 +15,11 @@ impl HandleInput for TextBox {
         match event.code {
             KeyCode::Char(c) => self.enter_char(c.to_ascii_uppercase()),
             KeyCode::Backspace => self.delete_char(),
-            KeyCode::Left => self.move_cursor_left(),
-            KeyCode::Right => self.move_cursor_right(),
+            // TODO need to render cursor based on character_index if we want this functionality
+            // KeyCode::Left => self.move_cursor_left(),
+            // KeyCode::Right => self.move_cursor_right(),
+            // KeyCode::Home
+            // KeyCode::End
             KeyCode::Enter => return Some(self.take()),
             _ => (),
         }
@@ -24,7 +27,7 @@ impl HandleInput for TextBox {
     }
 
     // TODO set character index based on position
-    // fn handle_mouse_event(&mut self, _event: MouseEvent, _rel_pos: Position) -> Option<String> 
+    // fn handle_mouse_event(&mut self, _event: MouseEvent, _rel_pos: Position) -> Option<String>
 }
 
 impl TextBox {

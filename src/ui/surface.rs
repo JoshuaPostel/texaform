@@ -493,16 +493,19 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     }
 
     let (name, guage) = current_research_content(app);
-    let left = Title::from(format!("Researching: {name}"));
-    let right = Title::from("[T]").alignment(Alignment::Right);
+    let titles = [
+        Some(format!("Researching: {name}")),
+        None,
+        Some("[T]".to_string()),
+    ];
     let tech = app
         .current_research_button
-        .with_content_and_title(guage, vec![left, right]);
-    render_widget_clamped(frame, tech, app.layout.surface.tech);
+        .with_content_and_title(guage, titles);
+    render_widget_clamped(frame, &tech, app.layout.surface.tech);
 
     render_widget_clamped(
         frame,
-        app.pause_menu_button.clone(),
+        &app.pause_menu_button,
         app.layout.surface.pause_menu_button,
     );
     render_surface_grid_fx(app, frame);

@@ -56,7 +56,7 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_save_file_metadata(app, frame);
     render_widget_clamped(
         frame,
-        app.previous_screen_button.clone(),
+        &app.previous_screen_button,
         app.layout.previous_screen_button,
     );
 }

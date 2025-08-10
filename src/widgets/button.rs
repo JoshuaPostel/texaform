@@ -1,15 +1,15 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Margin, Rect},
+    layout::{Alignment, Margin, Rect},
     style::{Color, Style, Styled},
-    text::Line,
-    widgets::{Block, BorderType, Paragraph, Widget, block::Title},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Paragraph, Widget, WidgetRef, block::Title},
 };
 
 #[derive(Debug, Clone)]
-pub struct Button<W: Widget + Styled> {
+pub struct Button<W: Widget + WidgetRef + Styled> {
     pub content: W,
-    pub titles: Vec<Title<'static>>,
+    pub titles: [Option<String>; 3],
     pub is_pressed: bool,
     pub is_hovered: bool,
     pub style: Style,
@@ -17,11 +17,11 @@ pub struct Button<W: Widget + Styled> {
     pub hovered_style: Style,
 }
 
-impl<W: Widget + Styled> Button<W> {
+impl<W: Widget + WidgetRef + Styled> Button<W> {
     pub fn new(content: W) -> Button<W> {
         Button {
             content,
-            titles: vec![],
+            titles: [None, None, None],
             is_pressed: false,
             is_hovered: false,
             style: Style::new().bg(Color::Black).fg(Color::Green),
@@ -38,7 +38,7 @@ impl<W: Widget + Styled> Button<W> {
         }
     }
 
-    pub fn with_content_and_title(&self, content: W, titles: Vec<Title<'static>>) -> Button<W> {
+    pub fn with_content_and_title(&self, content: W, titles: [Option<String>; 3]) -> Button<W> {
         Button {
             titles,
             content,
@@ -47,8 +47,8 @@ impl<W: Widget + Styled> Button<W> {
     }
 }
 
-impl<W: Widget + Styled> Widget for Button<W> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl<W: Widget + WidgetRef + Styled> WidgetRef for Button<W> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let style = match (self.is_pressed, self.is_hovered) {
             (true, _) => self.pressed_style,
             (false, true) => self.hovered_style,
@@ -59,12 +59,18 @@ impl<W: Widget + Styled> Widget for Button<W> {
             .border_type(BorderType::Thick)
             .border_style(Style::default().bg(Color::Black))
             .style(style);
-        for title in self.titles {
-            block = block.title(title)
+        if let Some(title) = &self.titles[0] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        }
+        if let Some(title) = &self.titles[1] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        }
+        if let Some(title) = &self.titles[2] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
         }
         block.render(area, buf);
         let inner = area.inner(Margin::new(1, 1));
-        self.content.render(inner, buf);
+        self.content.render_ref(inner, buf);
         buf.set_style(inner, style)
     }
 }
@@ -150,7 +156,7 @@ impl BorderAttachedButton {
 
         let button = Button {
             content,
-            titles: vec![],
+            titles: [None, None, None],
             is_pressed: false,
             is_hovered: false,
             style: Style::new().bg(Color::Black).fg(Color::Green),
@@ -165,9 +171,9 @@ impl BorderAttachedButton {
     }
 }
 
-impl Widget for BorderAttachedButton {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.button.render(area, buf);
+impl WidgetRef for BorderAttachedButton {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self.button.render_ref(area, buf);
         match self.attached_direction {
             Location::East(_) => {
                 let cell = &mut buf[(area.right() - 1, area.top())];

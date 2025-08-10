@@ -62,7 +62,7 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_tech_tree(app, frame, app.layout.tech_tree.tree);
     render_widget_clamped(
         frame,
-        app.previous_screen_button.clone(),
+        &app.previous_screen_button,
         app.layout.previous_screen_button,
     );
 }

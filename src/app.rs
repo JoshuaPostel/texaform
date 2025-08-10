@@ -117,7 +117,7 @@ pub struct App {
     pub load_game_double_click_tracker: DoubleClickTracker<u16>,
 
     pub save_screen_text_box: TextBox,
-    pub save_button: Button<Paragraph<'static>>,
+    pub save_button: BorderAttachedButton,
 
     pub event_sender: UnboundedSender<Event>,
 }
@@ -159,6 +159,8 @@ impl App {
             format!("↻  {} [ESC]", Screen::default()),
             Location::SouthEast,
         );
+        let save_button =
+            BorderAttachedButton::new("   Save [ENTER]    ".to_string(), Location::East(6));
 
         let surface = surface::generation::empty(event_sender.clone());
 
@@ -204,7 +206,7 @@ impl App {
             documentation_scroll: 0,
             save_files: OptionalTextList::default(),
             save_screen_text_box: TextBox::default(),
-            save_button: Button::new(Paragraph::default().centered()),
+            save_button,
             screen: Screen::default(),
             previous_screen: Screen::default(),
             previous_screen_button,

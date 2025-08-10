@@ -26,41 +26,39 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                 app.surface.update_agent_manual(&port, msg).await;
             }
         }
-        InputMode::Normal => {
-            match key_event.code {
-                KeyCode::Right => app.surface.move_right(1),
-                KeyCode::Left => app.surface.move_left(1),
-                KeyCode::Up => app.surface.move_up(1),
-                KeyCode::Down => app.surface.move_down(1),
-                KeyCode::End => app.surface.move_right(10),
-                KeyCode::Home => app.surface.move_left(10),
-                KeyCode::PageUp => app.surface.move_up(10),
-                KeyCode::PageDown => app.surface.move_down(10),
-                KeyCode::Char('D') | KeyCode::Char('d') => {
-                    app.set_screen(Screen::Documentation);
-                }
-                KeyCode::Char('M') | KeyCode::Char('m') => {
-                    app.set_screen(Screen::PauseMenu);
-                }
-                KeyCode::Char('T') | KeyCode::Char('t') => {
-                    app.set_screen(Screen::TechTree);
-                }
-                KeyCode::Char('C') | KeyCode::Char('c') => {
-                    if let Some(comms) = focused_comms
-                        && comms.address.is_none()
-                    {
-                        app.input_mode = InputMode::Editing;
-                    }
-                }
-                KeyCode::Char('N') | KeyCode::Char('n') => {
-                    app.surface.game_state.tutorial_state.next();
-                }
-                KeyCode::Char('P') | KeyCode::Char('p') => {
-                    app.surface.game_state.tutorial_state.previous();
-                }
-                _ => {}
+        InputMode::Normal => match key_event.code {
+            KeyCode::Right => app.surface.move_right(1),
+            KeyCode::Left => app.surface.move_left(1),
+            KeyCode::Up => app.surface.move_up(1),
+            KeyCode::Down => app.surface.move_down(1),
+            KeyCode::End => app.surface.move_right(10),
+            KeyCode::Home => app.surface.move_left(10),
+            KeyCode::PageUp => app.surface.move_up(10),
+            KeyCode::PageDown => app.surface.move_down(10),
+            KeyCode::Char('D') | KeyCode::Char('d') => {
+                app.set_screen(Screen::Documentation);
             }
-        }
+            KeyCode::Char('M') | KeyCode::Char('m') => {
+                app.set_screen(Screen::PauseMenu);
+            }
+            KeyCode::Char('T') | KeyCode::Char('t') => {
+                app.set_screen(Screen::TechTree);
+            }
+            KeyCode::Char('C') | KeyCode::Char('c') => {
+                if let Some(comms) = focused_comms
+                    && comms.address.is_none()
+                {
+                    app.input_mode = InputMode::Editing;
+                }
+            }
+            KeyCode::Char('N') | KeyCode::Char('n') => {
+                app.surface.game_state.tutorial_state.next();
+            }
+            KeyCode::Char('P') | KeyCode::Char('p') => {
+                app.surface.game_state.tutorial_state.previous();
+            }
+            _ => {}
+        },
     }
     Ok(())
 }
