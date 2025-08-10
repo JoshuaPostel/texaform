@@ -67,6 +67,7 @@ x >x
 - [ ] implement uparrow/downarrow for manual command ui
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
+- [ ] ability to manually disconnect agent from TUI?
 - [x] internal code: rename Properties to Entities
 
 ## Future

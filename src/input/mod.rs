@@ -21,7 +21,7 @@ mod tech_tree;
 
 impl Screen {
     pub fn on_load(self, app: &mut App) {
-        app.save_button.is_hovered = false;
+        app.save_button.button.is_hovered = false;
         app.pause_menu_button.is_hovered = false;
         app.current_research_button.is_hovered = false;
         app.previous_screen_button.button.is_hovered = false;

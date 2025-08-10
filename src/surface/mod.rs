@@ -101,6 +101,8 @@ pub struct Surface {
     pub y: usize,
     pub grid: Grid,
 
+    // TODO make an abstraction on top agents for modularity and making get_mut methods
+    // more specific to this field
     /// address to grid position mapping
     pub agents: BTreeMap<usize, Comms>,
     pub power: Power,
@@ -140,14 +142,19 @@ impl Surface {
             .and_then(|port| self.get_agent(&port).map(|v| &**v))
     }
 
+    pub fn focused_agent_mut(&mut self) -> Option<&mut Box<dyn Agent>> {
+        self.focused_agent_port()
+            .and_then(|port| self.get_mut_agent(&port))
+    }
+
     pub fn focused_agent_comms(&self) -> Option<&Comms> {
         self.focused_agent_port()
             .and_then(|port| self.agents.get(&port))
     }
 
-    pub fn focused_agent_mut(&mut self) -> Option<&mut Box<dyn Agent>> {
+    pub fn focused_agent_comms_mut(&mut self) -> Option<&mut Comms> {
         self.focused_agent_port()
-            .and_then(|port| self.get_mut_agent(&port))
+            .and_then(|port| self.agents.get_mut(&port))
     }
 
     pub fn tick(&mut self) {
@@ -513,8 +520,6 @@ impl Surface {
 
     pub async fn update_agent_remote(&mut self, port: &usize, msg: String) {
         self.game_state.stats.tcp_command_count += 1;
-        // TODO use unsafe mem::swap directly avoiding the push and pop
-        // see source code of swap(a, b)
         let reply = if let Some(pos) = self.agent_position(port) {
             let gent = self.grid.pop(&pos);
             if let Some(Gent::Age(agent)) = gent {
@@ -532,28 +537,21 @@ impl Surface {
         }
     }
 
-    pub async fn update_agent_manual(&mut self, port: &usize) {
+    pub async fn update_agent_manual(&mut self, port: &usize, msg: String) {
         self.game_state.stats.manual_command_count += 1;
-        // TODO use unsafe mem::swap directly avoiding the push and pop
-        // see source code of swap(a, b)
+        let reply = self.handle_message(port, msg.clone()).await;
         if let Some(comms) = self.agents.get_mut(port) {
-            let msg = comms.text_box.submit_message();
-            let reply = if let Some(pos) = comms.position {
-                let gent = self.grid.pop(&pos);
-                if let Some(Gent::Age(agent)) = gent {
-                    self.update_agent(msg.clone(), pos, port, agent).await
-                } else {
-                    tracing::error!("expected agent at {pos:?}");
-                    return;
-                }
-            } else {
-                self.handle_hud_command(msg.clone()).to_string()
-            };
-            if let Some(comms) = self.agents.get_mut(port) {
-                comms.log.push((msg, reply));
-            }
+            comms.log.push((msg, reply));
+        }
+    }
+
+    async fn handle_message(&mut self, port: &usize, msg: String) -> String {
+        if let Some(pos) = self.agent_position(port)
+            && let Some(Gent::Age(agent)) = self.grid.pop(&pos)
+        {
+            self.update_agent(msg.clone(), pos, port, agent).await
         } else {
-            tracing::warn!("expected agent at port {port}");
+            self.handle_hud_command(msg.clone()).to_string()
         }
     }
 

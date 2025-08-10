@@ -1,10 +1,33 @@
-use ratatui::widgets::Paragraph;
+use crate::widgets::HandleInput;
+use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
+use ratatui::{layout::Position, widgets::Paragraph};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct TextBox {
     pub input: String,
     pub character_index: usize,
+}
+
+impl HandleInput for TextBox {
+    type Output = String;
+    fn handle_key_event(&mut self, event: KeyEvent) -> Option<String> {
+        match event.code {
+            KeyCode::Char(c) => self.enter_char(c.to_ascii_uppercase()),
+            KeyCode::Backspace => self.delete_char(),
+            // TODO need to render cursor based on character_index if we want this functionality
+            // KeyCode::Left => self.move_cursor_left(),
+            // KeyCode::Right => self.move_cursor_right(),
+            // KeyCode::Home
+            // KeyCode::End
+            KeyCode::Enter => return Some(self.take()),
+            _ => (),
+        }
+        None
+    }
+
+    // TODO set character index based on position
+    // fn handle_mouse_event(&mut self, _event: MouseEvent, _rel_pos: Position) -> Option<String>
 }
 
 impl TextBox {
@@ -70,11 +93,8 @@ impl TextBox {
         }
     }
 
-    // TODO rename, its not "submitting"
-    pub fn submit_message(&mut self) -> String {
-        // TODO could probably avoid this clone
-        let msg = self.input.clone();
-        self.input.clear();
+    pub fn take(&mut self) -> String {
+        let msg = std::mem::take(&mut self.input);
         self.character_index = 0;
         msg.trim().to_string()
     }
