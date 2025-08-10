@@ -13,39 +13,21 @@ use crate::ui::Screen;
 use crate::widgets::HandleInput;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
-    let msg = app
-        .surface
-        .focused_agent_comms_mut()
-        .and_then(|comms| comms.text_box.handle_key_event(key_event));
-    if let Some(msg) = msg {
-        app.surface.update_agent_manual(&1234, msg).await;
-    }
-    //
-    //    if let Some(port) = app.surface.focused_agent_port()
-    //        && let Some(comms) = app.surface.agents.get_mut(&port)
-    //    {
-    //        if let Some(msg) = comms.text_box.handle_key_event(key_event) {
-    //            app.surface.update_agent_manual(&port, msg).await;
-    //        }
-    //    }
-
+    let focused_comms = app.surface.focused_agent_comms_mut();
     match app.input_mode {
-        // TODO will need to adjust if we need other text_boxes
         InputMode::Editing => {
             if key_event.code == KeyCode::Esc {
                 app.input_mode = InputMode::Normal;
             }
-            if let Some(port) = app.surface.focused_agent_port()
-                && let Some(comms) = app.surface.agents.get_mut(&port)
+            if let Some(comms) = focused_comms
+                && let Some(msg) = comms.text_box.handle_key_event(key_event)
             {
-                if let Some(msg) = comms.text_box.handle_key_event(key_event) {
-                    app.surface.update_agent_manual(&port, msg).await;
-                }
+                let port = comms.port;
+                app.surface.update_agent_manual(&port, msg).await;
             }
         }
         InputMode::Normal => {
             match key_event.code {
-                // Counter handlers
                 KeyCode::Right => app.surface.move_right(1),
                 KeyCode::Left => app.surface.move_left(1),
                 KeyCode::Up => app.surface.move_up(1),
@@ -64,7 +46,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                     app.set_screen(Screen::TechTree);
                 }
                 KeyCode::Char('C') | KeyCode::Char('c') => {
-                    app.input_mode = InputMode::Editing;
+                    if let Some(comms) = focused_comms
+                        && comms.address.is_none()
+                    {
+                        app.input_mode = InputMode::Editing;
+                    }
                 }
                 KeyCode::Char('N') | KeyCode::Char('n') => {
                     app.surface.game_state.tutorial_state.next();
@@ -72,7 +58,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                 KeyCode::Char('P') | KeyCode::Char('p') => {
                     app.surface.game_state.tutorial_state.previous();
                 }
-                // Other handlers you could add here.
                 _ => {}
             }
         }
@@ -82,12 +67,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
 
 pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<()> {
     use MouseEventKind as Kind;
+    let pos = Position {
+        x: event.column,
+        y: event.row,
+    };
     match event.kind {
         Kind::Moved => {
-            let pos = Position {
-                x: event.column,
-                y: event.row,
-            };
             app.pause_menu_button.is_hovered = app.layout.surface.pause_menu_button.contains(pos);
             app.current_research_button.is_hovered = app.layout.surface.tech.contains(pos);
             if app.surface.game_state.tutorial_state != Tutorial::Complete {
@@ -99,10 +84,6 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         }
         Kind::Down(MouseButton::Left) => {
             info!("clicked: col {}, row {}", event.column, event.row);
-            let pos = Position {
-                x: event.column,
-                y: event.row,
-            };
             match app.layout.surface.agent.text_box {
                 Some(area) if area.contains(pos) => {
                     app.input_mode = InputMode::Editing;

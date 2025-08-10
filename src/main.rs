@@ -97,7 +97,11 @@ async fn main() -> AppResult<()> {
             Event::AgentConnection(port, address) => {
                 if let Some(comms) = app.surface.agents.get_mut(&port) {
                     comms.address = Some(address);
-                    app.input_mode = InputMode::Normal;
+                    if let Some(focused_port) = app.surface.focused_agent_port()
+                        && focused_port == port
+                    {
+                        app.input_mode = InputMode::Normal;
+                    }
                 } else {
                     tracing::warn!("expected agent at port {port}");
                 }

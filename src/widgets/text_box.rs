@@ -24,9 +24,7 @@ impl HandleInput for TextBox {
     }
 
     // TODO set character index based on position
-    fn handle_mouse_event(&mut self, _event: MouseEvent, _rel_pos: Position) -> Option<String> {
-        None
-    }
+    // fn handle_mouse_event(&mut self, _event: MouseEvent, _rel_pos: Position) -> Option<String> 
 }
 
 impl TextBox {
