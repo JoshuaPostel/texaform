@@ -17,24 +17,32 @@ pub struct TextBox {
 }
 
 // could return this as Output
-// pub enum TextBoxAction {
-//     Edit(String),
-//     Submit(String)
-// }
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Action {
+    Edit(String),
+    Submit(String)
+}
 
 impl HandleInput for TextBox {
     // TODO try returing &'a str
-    type Output = String;
-    fn handle_key_event(&mut self, event: KeyEvent) -> Option<String> {
+    type Output = Action;
+    fn handle_key_event(&mut self, event: KeyEvent) -> Option<Action> {
         match event.code {
-            KeyCode::Char(c) => self.enter_char(c.to_ascii_uppercase()),
+            KeyCode::Char(c) => {
+                self.enter_char(c.to_ascii_uppercase());
+                return Some(Action::Edit(self.content.clone()));
+            },
             KeyCode::Backspace => {
                 if let Some(idx) = self.character_index.checked_sub(1) {
                     self.delete_char(idx);
                     self.move_cursor_left();
+                    return Some(Action::Edit(self.content.clone()));
                 }
             }
-            KeyCode::Delete => self.delete_char(self.character_index),
+            KeyCode::Delete => {
+                self.delete_char(self.character_index);
+                return Some(Action::Edit(self.content.clone()));
+            },
             KeyCode::Left => self.move_cursor_left(),
             KeyCode::Right => self.move_cursor_right(),
             KeyCode::Home => self.character_index = 0,
@@ -46,7 +54,7 @@ impl HandleInput for TextBox {
                     self.content.clone()
                 };
                 if !output.is_empty() {
-                    return Some(output);
+                    return Some(Action::Submit(output));
                 }
             }
             _ => (),
@@ -54,7 +62,7 @@ impl HandleInput for TextBox {
         None
     }
 
-    fn handle_mouse_event(&mut self, event: MouseEvent, rel_pos: Position) -> Option<String> {
+    fn handle_mouse_event(&mut self, event: MouseEvent, rel_pos: Position) -> Option<Action> {
         if event.kind == MouseEventKind::Down(MouseButton::Left) {
             if let Some(idx) = rel_pos.x.checked_sub(3) {
                 self.character_index = (idx as usize).min(self.content.len());

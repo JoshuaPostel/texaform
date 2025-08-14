@@ -34,6 +34,17 @@ impl<T: Display + Debug + Ord + Eq> OptionalTextList<T> {
             self.sort();
         }
     }
+
+    /// returns whether or not item was in list
+    pub fn select_item(&mut self, item: &T) -> bool {
+        if let Some(idx) = self.items.iter().position(|i| i == item) {
+            self.select(idx);
+            true
+        } else {
+            false
+        }
+    }
+
 }
 
 impl<T: Display + Debug> OptionalTextList<T> {
@@ -97,6 +108,7 @@ impl<T: Display + Debug> OptionalTextList<T> {
         }
     }
 
+    // TODO will this panic if called on empty list?
     pub fn select(&mut self, idx: usize) {
         self.hover(None);
         if let Some(selected) = self.selected {
@@ -105,6 +117,16 @@ impl<T: Display + Debug> OptionalTextList<T> {
         let selected = idx.min(self.items.len() - 1);
         self.selected = Some(selected);
         self.lines[selected].style = self.selected_style;
+    }
+
+    /// returns whether or not item was in list
+    pub fn select_by_display(&mut self, item: &impl Display) -> bool {
+        if let Some(idx) = self.items.iter().position(|i| i.to_string() == item.to_string()) {
+            self.select(idx);
+            true
+        } else {
+            false
+        }
     }
 
     pub fn hover(&mut self, idx: Option<usize>) {

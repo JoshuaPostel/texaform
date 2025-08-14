@@ -11,6 +11,7 @@ use crate::surface::grid::Gent;
 use crate::surface::{Focus, tutorial::Tutorial};
 use crate::ui::Screen;
 use crate::widgets::HandleInput;
+use crate::widgets::text_box::Action;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     let focused_comms = app.surface.focused_agent_comms_mut();
@@ -20,7 +21,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
                 app.input_mode = InputMode::Normal;
             }
             if let Some(comms) = focused_comms
-                && let Some(msg) = comms.text_box.handle_key_event(key_event)
+                && let Some(Action::Submit(msg)) = comms.text_box.handle_key_event(key_event)
             {
                 let port = comms.port;
                 app.surface.update_agent_manual(&port, msg).await;
@@ -128,9 +129,10 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                     .checked_sub(1)
                     .map(usize::from);
                 if let Some(idx) = index
-                    && let Some(port) = app.surface.agents.keys().nth(idx) {
-                        app.surface.focus = Some(Focus::Agent(*port));
-                    }
+                    && let Some(port) = app.surface.agents.keys().nth(idx)
+                {
+                    app.surface.focus = Some(Focus::Agent(*port));
+                }
             }
             if app.layout.surface.pause_menu_button.contains(pos) {
                 if let Ok(file) = File::open("assets/beep2.wav") {
