@@ -11,21 +11,41 @@ use crate::surface::grid::Gent;
 use crate::surface::{Focus, tutorial::Tutorial};
 use crate::ui::Screen;
 use crate::widgets::HandleInput;
+use crate::widgets::text_box::Action;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+    let pcc = app.surface.previous_command_counter;
     let focused_comms = app.surface.focused_agent_comms_mut();
     match app.input_mode {
-        InputMode::Editing => {
-            if key_event.code == KeyCode::Esc {
-                app.input_mode = InputMode::Normal;
+        InputMode::Editing => match key_event.code {
+            KeyCode::Esc => app.input_mode = InputMode::Normal,
+            KeyCode::Up => {
+                if let Some(comms) = focused_comms {
+                    let pcc = pcc.wrapping_add(1);
+                    let command = comms.log.previous_command(pcc);
+                    if !command.is_empty() {
+                        comms.text_box.set_content(command);
+                        app.surface.previous_command_counter = pcc;
+                    }
+                }
             }
-            if let Some(comms) = focused_comms
-                && let Some(msg) = comms.text_box.handle_key_event(key_event)
-            {
-                let port = comms.port;
-                app.surface.update_agent_manual(&port, msg).await;
+            KeyCode::Down => {
+                if let Some(comms) = focused_comms {
+                    let pcc = pcc.saturating_sub(1);
+                    let command = comms.log.previous_command(pcc);
+                    comms.text_box.set_content(command);
+                    app.surface.previous_command_counter = pcc;
+                }
             }
-        }
+            _ => {
+                if let Some(comms) = focused_comms
+                    && let Some(Action::Submit(msg)) = comms.text_box.handle_key_event(key_event)
+                {
+                    let port = comms.port;
+                    app.surface.update_agent_manual(&port, msg).await;
+                }
+            }
+        },
         InputMode::Normal => match key_event.code {
             KeyCode::Right => app.surface.move_right(1),
             KeyCode::Left => app.surface.move_left(1),
@@ -127,10 +147,10 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                 let index = (pos.y - app.layout.surface.agents.y)
                     .checked_sub(1)
                     .map(usize::from);
-                if let Some(idx) = index {
-                    if let Some(port) = app.surface.agents.keys().nth(idx) {
-                        app.surface.focus = Some(Focus::Agent(*port));
-                    }
+                if let Some(idx) = index
+                    && let Some(port) = app.surface.agents.keys().nth(idx)
+                {
+                    app.surface.focus = Some(Focus::Agent(*port));
                 }
             }
             if app.layout.surface.pause_menu_button.contains(pos) {

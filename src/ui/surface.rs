@@ -16,7 +16,7 @@ use crate::app::{App, InputMode};
 use crate::surface::grid::Gent;
 use crate::surface::{Focus, Surface};
 use crate::ui::tech_tree::current_research_content;
-use crate::ui::{render_stateful_widget_clamped, render_widget_clamped, render_widget_ref_clamped};
+use crate::ui::{render_stateful_widget_clamped, render_widget_clamped};
 
 #[derive(Debug, Default)]
 pub struct SurfaceLayout {
@@ -194,25 +194,31 @@ fn render_agent_log(app: &App, frame: &mut Frame) {
                 //let list = agent_log(comms, height, width).style(style);
                 let list = comms.log.list(height as u8, width).style(style);
 
-                if let Some(text_box_rect) = agent_layout.text_box {
-                    let (color, append, shortcut) = match app.input_mode {
-                        InputMode::Normal => (Color::Red, "", "[C]"),
-                        InputMode::Editing => (Color::Green, "█", "[ESC]"),
+                if let Some(comman_line_rect) = agent_layout.text_box {
+                    let (color, shortcut) = match app.input_mode {
+                        InputMode::Normal => (Color::Red, "[C]"),
+                        InputMode::Editing => (Color::Green, "[ESC]"),
                     };
-                    let text_box =
-                        Paragraph::new("> ".to_string() + comms.text_box.input.as_str() + append)
-                            .block(
-                                Block::default()
-                                    .title("Command Line")
-                                    .title(Title::from(shortcut).alignment(Alignment::Right))
-                                    .borders(Borders::TOP)
-                                    .fg(color)
-                                    .bg(Color::Black),
-                            );
+                    let block = Block::default()
+                        .title("Command Line")
+                        .title(Title::from(shortcut).alignment(Alignment::Right))
+                        .borders(Borders::TOP)
+                        .fg(color)
+                        .bg(Color::Black);
 
                     render_widget_clamped(frame, list, agent_layout.log.inner(Margin::new(1, 1)));
-                    render_widget_clamped(frame, ratatui::widgets::Clear, text_box_rect);
-                    render_widget_clamped(frame, text_box, text_box_rect);
+                    render_widget_clamped(frame, ratatui::widgets::Clear, comman_line_rect);
+                    render_widget_clamped(frame, block, comman_line_rect);
+                    // TODO move to agent_layout
+                    if let Some(width) = comman_line_rect.width.checked_sub(2) {
+                        let text_box_rect = Rect {
+                            x: comman_line_rect.x,
+                            y: comman_line_rect.y + 1,
+                            width,
+                            height: 1,
+                        };
+                        render_widget_clamped(frame, &comms.text_box, text_box_rect);
+                    }
                 }
             }
         }
@@ -245,15 +251,13 @@ fn render_info(app: &App, frame: &mut Frame) {
                     .title(Title::from(surface_cords).alignment(Alignment::Right))
                     .style(DEFAULT_STYLE)
                     .render(area, buf);
-                render_widget_ref_clamped(frame, gent, inner);
+                render_widget_clamped(frame, gent, inner);
             }
         }
         Some(Focus::Agent(port)) => {
             let area = app.layout.surface.info;
             if let Some(pos) = app.surface.agent_position(&port) {
                 if let Some(gent) = app.surface.grid.get(&pos) {
-                    //gent.render_ref(app.layout.surface.info, buf)
-                    //render_widget_ref_clamped(frame, gent, app.layout.surface.info);
                     let inner = area.inner(Margin::new(1, 1));
                     let cords = format!("[{}, {}]", pos.x, pos.y);
                     Block::bordered()
@@ -262,7 +266,7 @@ fn render_info(app: &App, frame: &mut Frame) {
                         .title(Title::from(surface_cords).alignment(Alignment::Right))
                         .style(DEFAULT_STYLE)
                         .render(area, buf);
-                    render_widget_ref_clamped(frame, gent, inner);
+                    render_widget_clamped(frame, gent, inner);
                 }
             } else {
                 Block::bordered()

@@ -1,5 +1,5 @@
 use crate::TICK_UPDATE_MILLS;
-use ratatui::layout::Position;
+use ratatui::layout::{Position, Rect};
 
 pub fn human_readable_tick_count(tick_count: u64) -> String {
     let mills = tick_count * TICK_UPDATE_MILLS;
@@ -7,6 +7,17 @@ pub fn human_readable_tick_count(tick_count: u64) -> String {
     let minutes = (mills / (1000 * 60)) % 60;
     let hours = mills / (1000 * 60 * 60);
     format!("{hours}:{minutes:0>2}:{seconds:0>2}")
+}
+
+pub fn relative_position(rect: Rect, pos: Position) -> Option<Position> {
+    if rect.contains(pos)
+        && let Some(x) = pos.x.checked_sub(rect.x)
+        && let Some(y) = pos.y.checked_sub(rect.y)
+    {
+        Some(Position::new(x, y))
+    } else {
+        None
+    }
 }
 
 pub fn xy_to_idx(x: usize, y: usize, grid_width: usize) -> usize {

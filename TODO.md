@@ -1,14 +1,13 @@
 # TEXAFORM
 
-## milestone
-- [ ] do a playthrough
-  - [x] smelter
-  - [x] solar
-  - [x] battery 
-  - [x] lazer cutter
-  - [x] build solar
-  - [ ] dog
-  - [ ] victory 
+## playthrough
+- [x] smelter
+- [x] solar
+- [x] battery 
+- [x] lazer cutter
+- [x] build solar
+- [ ] dog
+- [ ] victory 
 - [o] extra credit
   - [ ] assembler 
   - [ ] accumulator
@@ -28,9 +27,6 @@ x >x
 ```
 
 ## playthrough missing features
-- [ ] add [C] and [ESC] to `load_game` text box
-    - [ ] try reworking some widgets into the component pattern
-      * https://ratatui.rs/concepts/application-patterns/component-architecture/
 - [ ] something fun when victory researched
   - [x] show victory screen or popup with run stats
     - [x] add command counter
@@ -41,14 +37,15 @@ x >x
   - agents list should be implemented like the other lists
 
 ## bugs
-- [ ] rework `save_game` screen input
 - [ ] focus on entity > dog picks entity > focus shoud `INTERNAL_DEV`
 - [ ] load game starts at top left (0, 0)
 - [ ] why is there a delay connecting to agents?
 
 ## low priority
 - [ ] use text list for agent list
-- [ ] unify text list and optional text list?
+- [ ] unify text list and optional text list
+  - use optional list everywhere? 
+  - [ ] implement offset (when not all items can fit in UI)
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
 - [ ] clean up UI
   - [ ] when agent selected it is displayed twice (agent log and info)
@@ -64,13 +61,13 @@ x >x
 - [ ] render entities name in the UI with line() instead of kind() everywhere
   - [ ] documentation
   - [ ] agent list
-- [ ] implement uparrow/downarrow for manual command ui
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
 - [ ] ability to manually disconnect agent from TUI?
-- [x] internal code: rename Properties to Entities
 
 ## Future
+- [ ] nail down render rate / tick rate / annimation rate
+  - [ ] can we have a speed setting (i.e. time between commands accepted by agent)?
 - [ ] fog of war
 - [ ] secrets
 - [ ] bio

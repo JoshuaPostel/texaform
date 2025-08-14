@@ -495,11 +495,11 @@ impl Solver {
                 let x = (i32::from(pos.x) + x).unsigned_abs() as usize;
                 let y = (i32::from(pos.y) + y).unsigned_abs() as usize;
                 let idx = xy_to_idx(x, y, PLATE_WIDTH);
-                if let Some(s) = self.plate.get_mut(idx) {
-                    if *s == State::Uncut {
-                        *s = State::Cut;
-                        uncut_neighbors.push(idx_to_pos(idx, PLATE_WIDTH));
-                    }
+                if let Some(s) = self.plate.get_mut(idx)
+                    && *s == State::Uncut
+                {
+                    *s = State::Cut;
+                    uncut_neighbors.push(idx_to_pos(idx, PLATE_WIDTH));
                 }
             }
         }

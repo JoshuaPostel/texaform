@@ -115,6 +115,10 @@ pub struct Surface {
     #[serde(skip)]
     pub focus: Option<Focus>,
 
+    // for 
+    #[serde(skip)]
+    pub previous_command_counter: u8,
+
     // TODO move this back up to App and use a reference/smart pointer?
     #[serde(skip)]
     pub event_sender: UnboundedSender<Event>,
@@ -720,6 +724,7 @@ impl Surface {
             power: Power::default(),
             effects: vec![],
             focus: None,
+            previous_command_counter: 0,
             hud: Hud::default(),
         };
         let comms = Comms::new(&surface, None, Entity::HUD).await;

@@ -2,15 +2,14 @@ use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Stylize},
-    widgets::{Block, Paragraph},
+    widgets::Block,
 };
 
-use crate::app::{App, InputMode};
+use crate::app::App;
 use crate::ui::load_game::{
     render_save_file_metadata, render_save_file_preview, save_file_boarder,
 };
-use crate::ui::{render_widget_clamped, render_widget_ref_clamped};
-use crate::widgets::button::{BorderAttachedButton, Location};
+use crate::ui::render_widget_clamped;
 
 #[derive(Debug, Default)]
 pub struct SaveGameLayout {
@@ -62,13 +61,23 @@ pub fn render(app: &App, frame: &mut Frame) {
         app.layout.save_game.save_files.inner(Margin::new(1, 1)),
     );
 
-    let text_input = Paragraph::new(format!("> {}█", app.save_screen_text_box.input))
-        .block(Block::bordered().title("Name"))
+    let block = Block::bordered()
+        .title("Name")
         .fg(Color::Green)
         .bg(Color::Black);
+    render_widget_clamped(frame, block, app.layout.save_game.save_file_input);
+    render_widget_clamped(
+        frame,
+        &app.save_screen_text_box,
+        app.layout
+            .save_game
+            .save_file_input
+            .inner(Margin::new(1, 1)),
+    );
 
-    render_widget_clamped(frame, text_input, app.layout.save_game.save_file_input);
-    render_widget_ref_clamped(frame, &app.save_button, app.layout.save_game.save_button);
+    if !app.save_screen_text_box.content().is_empty() {
+        render_widget_clamped(frame, &app.save_button, app.layout.save_game.save_button);
+    }
 
     render_save_file_preview(app, frame);
     render_save_file_metadata(app, frame);

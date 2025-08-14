@@ -177,6 +177,7 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
         power: Power::default(),
         effects: vec![],
         focus: None,
+        previous_command_counter: 0,
         hud: Hud::default(),
     }
 }
@@ -197,6 +198,7 @@ pub fn empty(event_sender: UnboundedSender<Event>) -> Surface {
         effects: vec![],
         focus: None,
         hud: Hud::default(),
+        previous_command_counter: 0,
     }
 }
 

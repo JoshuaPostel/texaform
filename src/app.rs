@@ -97,7 +97,8 @@ pub struct App {
     pub surface: Surface,
 
     /// for loading game
-    //pub loading_state: LoadingState,
+    // TODO unify save_file_cache and save_files behind a struct
+    // for better modularity
     pub save_file_cache: HashMap<PathBuf, LoadingState>,
 
     /// UI
@@ -128,7 +129,7 @@ pub struct ConstructionSite {
     pub buildable: bool,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct DisplayPathBuf {
     pub inner: PathBuf,
 }
@@ -142,6 +143,12 @@ impl std::fmt::Display for DisplayPathBuf {
             .map(|x| x.to_str().unwrap_or_default())
             .unwrap_or("Error loading filename");
         write!(f, "{name}")
+    }
+}
+
+impl From<PathBuf> for DisplayPathBuf {
+    fn from(inner: PathBuf) -> DisplayPathBuf {
+        DisplayPathBuf { inner }
     }
 }
 
@@ -161,6 +168,8 @@ impl App {
         );
         let save_button =
             BorderAttachedButton::new("   Save [ENTER]    ".to_string(), Location::East(6));
+
+        let save_screen_text_box = TextBox::new().clear_on_enter(true);
 
         let surface = surface::generation::empty(event_sender.clone());
 
@@ -205,7 +214,7 @@ impl App {
             documentation,
             documentation_scroll: 0,
             save_files: OptionalTextList::default(),
-            save_screen_text_box: TextBox::default(),
+            save_screen_text_box,
             save_button,
             screen: Screen::default(),
             previous_screen: Screen::default(),
@@ -245,6 +254,7 @@ impl App {
                 save_files.push(DisplayPathBuf { inner: file })
             }
         }
+        save_files.sort();
         let save_files = if save_files.is_empty() {
             OptionalTextList::default_style(save_files)
         } else {
@@ -279,7 +289,7 @@ impl App {
         let mut autosave_paths = vec![];
         for entry in std::fs::read_dir(save_path)? {
             let path = entry?.path();
-            let path_is_autosave = path.to_string_lossy().ends_with("_autosave.texaform");
+            let path_is_autosave = path.to_string_lossy().ends_with("_AUTOSAVE.texaform");
             if path.is_file() && path_is_autosave {
                 autosave_paths.push(path);
             }
@@ -312,7 +322,7 @@ impl App {
         tracing::info!("AUTOSAVE TIME");
         let now = Local::now();
         let formatted_time = now.format("%Y_%m_%d_%H:%M:%S");
-        SurfaceState::save(&self.surface, format!("{formatted_time}_autosave"))?;
+        SurfaceState::save(&self.surface, format!("{formatted_time}_AUTOSAVE"))?;
         match self.clean_up_autosaves() {
             Ok(_) => tracing::info!("cleaned up autosave dir"),
             Err(e) => tracing::error!("failed to clean up autosave dir: {e}"),

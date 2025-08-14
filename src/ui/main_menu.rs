@@ -70,7 +70,7 @@ fn render_set_seed(app: &App, frame: &mut Frame) {
     };
     let seed_input = Paragraph::new(content).alignment(Alignment::Center).block(
         Block::default()
-            .title("Set Seed")
+            .title("Seed")
             .title(Title::from("[0-9, DEL]").alignment(Alignment::Right))
             .borders(Borders::ALL),
     );
