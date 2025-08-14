@@ -44,7 +44,6 @@ impl<T: Display + Debug + Ord + Eq> OptionalTextList<T> {
             false
         }
     }
-
 }
 
 impl<T: Display + Debug> OptionalTextList<T> {
@@ -70,9 +69,10 @@ impl<T: Display + Debug> OptionalTextList<T> {
             hovered_style,
         }
     }
-    
+
     fn rebuild_lines(&mut self) {
-        self.lines = self.items
+        self.lines = self
+            .items
             .iter()
             .map(|i| Line::from(i.to_string()).style(self.style))
             .collect();
@@ -121,7 +121,11 @@ impl<T: Display + Debug> OptionalTextList<T> {
 
     /// returns whether or not item was in list
     pub fn select_by_display(&mut self, item: &impl Display) -> bool {
-        if let Some(idx) = self.items.iter().position(|i| i.to_string() == item.to_string()) {
+        if let Some(idx) = self
+            .items
+            .iter()
+            .position(|i| i.to_string() == item.to_string())
+        {
             self.select(idx);
             true
         } else {

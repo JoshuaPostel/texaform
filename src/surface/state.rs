@@ -260,10 +260,11 @@ pub struct GameState {
 impl GameState {
     pub fn progress_current_tech(&mut self) {
         if let Some(tech_node) = self.tech_tree.research_node
-            && let Some(unlocked_entity) = self.tech_tree.progress(tech_node) {
-                self.unlocked_entities.insert(unlocked_entity);
-                self.stats.research_complete += 1;
-            }
+            && let Some(unlocked_entity) = self.tech_tree.progress(tech_node)
+        {
+            self.unlocked_entities.insert(unlocked_entity);
+            self.stats.research_complete += 1;
+        }
     }
 
     pub fn current_tech(&self) -> Option<&Tech> {

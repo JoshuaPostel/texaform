@@ -1,5 +1,5 @@
 use crate::TICK_UPDATE_MILLS;
-use ratatui::layout::{Rect, Position};
+use ratatui::layout::{Position, Rect};
 
 pub fn human_readable_tick_count(tick_count: u64) -> String {
     let mills = tick_count * TICK_UPDATE_MILLS;
@@ -10,9 +10,9 @@ pub fn human_readable_tick_count(tick_count: u64) -> String {
 }
 
 pub fn relative_position(rect: Rect, pos: Position) -> Option<Position> {
-    if rect.contains(pos) 
-      && let Some(x) = pos.x.checked_sub(rect.x)
-      && let Some(y) = pos.y.checked_sub(rect.y)
+    if rect.contains(pos)
+        && let Some(x) = pos.x.checked_sub(rect.x)
+        && let Some(y) = pos.y.checked_sub(rect.y)
     {
         Some(Position::new(x, y))
     } else {

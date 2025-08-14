@@ -61,8 +61,10 @@ pub fn render(app: &App, frame: &mut Frame) {
         app.layout.save_game.save_files.inner(Margin::new(1, 1)),
     );
 
-
-    let block = Block::bordered().title("Name").fg(Color::Green).bg(Color::Black);
+    let block = Block::bordered()
+        .title("Name")
+        .fg(Color::Green)
+        .bg(Color::Black);
     render_widget_clamped(frame, block, app.layout.save_game.save_file_input);
     render_widget_clamped(
         frame,

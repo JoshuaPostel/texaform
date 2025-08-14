@@ -200,15 +200,14 @@ fn render_agent_log(app: &App, frame: &mut Frame) {
                         InputMode::Editing => (Color::Green, "█", "[ESC]"),
                     };
                     let text_box =
-                        Paragraph::new("> ".to_string() + comms.text_box.content() + append)
-                            .block(
-                                Block::default()
-                                    .title("Command Line")
-                                    .title(Title::from(shortcut).alignment(Alignment::Right))
-                                    .borders(Borders::TOP)
-                                    .fg(color)
-                                    .bg(Color::Black),
-                            );
+                        Paragraph::new("> ".to_string() + comms.text_box.content() + append).block(
+                            Block::default()
+                                .title("Command Line")
+                                .title(Title::from(shortcut).alignment(Alignment::Right))
+                                .borders(Borders::TOP)
+                                .fg(color)
+                                .bg(Color::Black),
+                        );
 
                     render_widget_clamped(frame, list, agent_layout.log.inner(Margin::new(1, 1)));
                     render_widget_clamped(frame, ratatui::widgets::Clear, text_box_rect);

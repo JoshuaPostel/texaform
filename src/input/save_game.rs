@@ -1,4 +1,4 @@
-use crate::app::{App, AppResult, DisplayPathBuf};
+use crate::app::{App, AppResult};
 use crate::utils::relative_position;
 use crate::widgets::text_box::Action;
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};

@@ -20,7 +20,7 @@ pub struct TextBox {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Action {
     Edit(String),
-    Submit(String)
+    Submit(String),
 }
 
 impl HandleInput for TextBox {
@@ -31,7 +31,7 @@ impl HandleInput for TextBox {
             KeyCode::Char(c) => {
                 self.enter_char(c.to_ascii_uppercase());
                 return Some(Action::Edit(self.content.clone()));
-            },
+            }
             KeyCode::Backspace => {
                 if let Some(idx) = self.character_index.checked_sub(1) {
                     self.delete_char(idx);
@@ -42,7 +42,7 @@ impl HandleInput for TextBox {
             KeyCode::Delete => {
                 self.delete_char(self.character_index);
                 return Some(Action::Edit(self.content.clone()));
-            },
+            }
             KeyCode::Left => self.move_cursor_left(),
             KeyCode::Right => self.move_cursor_right(),
             KeyCode::Home => self.character_index = 0,

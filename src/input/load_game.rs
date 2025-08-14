@@ -39,7 +39,6 @@ pub fn load_save_file(app: &mut App, path: &PathBuf) {
     tracing::info!("post load");
 }
 
-
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     match key_event.code {
         KeyCode::Esc => {
@@ -106,30 +105,31 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
 
 async fn load2(app: &mut App) {
     if let Some(path) = &app.save_files.selected().map(|x| x.inner.clone())
-        && let Some(loading_state) = app.save_file_cache.remove(path) {
-            match loading_state {
-                LoadingState::Loaded(state) => {
-                    tracing::info!("HERE");
-                    // TODO how to force agents to be dropped?
-                    app.surface = surface::generation::empty(app.event_sender.clone());
-                    // TODO the following comment avoids the port in use panic
-                    // so its probably a dely issue
-                    // need to implement a Comms drop such that it waits till the ports are free
-                    // again?
-                    tracing::info!("should be dropped?: {:?}", app.surface.agents);
-                    app.surface = state.into_surface(app.event_sender.clone()).await;
-                    //tracing::info!("surface: {:?}", app.surface);
-                    app.set_screen(Screen::Surface);
-                }
-                LoadingState::Failed(state) => {
-                    app.save_file_cache
-                        .insert(path.clone(), LoadingState::Failed(state));
-                }
-                other => {
-                    tracing::info!("other: {other:?}")
-                }
+        && let Some(loading_state) = app.save_file_cache.remove(path)
+    {
+        match loading_state {
+            LoadingState::Loaded(state) => {
+                tracing::info!("HERE");
+                // TODO how to force agents to be dropped?
+                app.surface = surface::generation::empty(app.event_sender.clone());
+                // TODO the following comment avoids the port in use panic
+                // so its probably a dely issue
+                // need to implement a Comms drop such that it waits till the ports are free
+                // again?
+                tracing::info!("should be dropped?: {:?}", app.surface.agents);
+                app.surface = state.into_surface(app.event_sender.clone()).await;
+                //tracing::info!("surface: {:?}", app.surface);
+                app.set_screen(Screen::Surface);
+            }
+            LoadingState::Failed(state) => {
+                app.save_file_cache
+                    .insert(path.clone(), LoadingState::Failed(state));
+            }
+            other => {
+                tracing::info!("other: {other:?}")
             }
         }
+    }
 }
 
 //async fn load(app: &mut App) {

@@ -8,7 +8,6 @@ use crate::input::load_game::load_selected_save_file;
 use crate::surface::generation;
 use crate::ui::Screen;
 
-
 mod documentation;
 mod load_game;
 mod main_menu;
