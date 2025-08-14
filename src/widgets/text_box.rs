@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use ratatui::{
     buffer::Buffer,
     layout::{Position, Rect},
-    style::Color,
+    style::Modifier,
     widgets::{Paragraph, Widget, WidgetRef},
 };
 
@@ -27,6 +27,7 @@ impl HandleInput for TextBox {
     // TODO try returing &'a str
     type Output = Action;
     fn handle_key_event(&mut self, event: KeyEvent) -> Option<Action> {
+        tracing::info!("HERE");
         match event.code {
             KeyCode::Char(c) => {
                 self.enter_char(c.to_ascii_uppercase());
@@ -81,8 +82,8 @@ impl WidgetRef for TextBox {
             if usize::from(pos.x - area.x) == self.character_index + 2
                 && let Some(cell) = buf.cell_mut(pos)
             {
-                cell.fg = Color::Black;
-                cell.bg = Color::Green;
+                // swaps fg and bg
+                cell.modifier = Modifier::REVERSED;
                 break;
             }
         }

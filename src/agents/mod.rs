@@ -202,6 +202,12 @@ impl CommLogs {
         self.write_idx = self.write_idx.wrapping_add(1);
     }
 
+    pub fn previous_command(&self, n_previous: u8) -> String {
+        let idx = self.write_idx.wrapping_sub(n_previous) as usize;
+        let (command, _) = &self.data[idx];
+        command.clone()
+    }
+
     pub fn list(&self, n: u8, width: usize) -> List<'_> {
         let width = (width / 2).saturating_sub(2);
         (1..n + 1)

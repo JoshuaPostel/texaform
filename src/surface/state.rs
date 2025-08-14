@@ -135,6 +135,7 @@ impl SurfaceState {
             event_sender: event_sender.clone(),
             effects: vec![],
             focus: None,
+            previous_command_counter: 0,
             hud: Hud::default(),
         }
     }

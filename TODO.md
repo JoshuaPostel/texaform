@@ -1,14 +1,13 @@
 # TEXAFORM
 
-## milestone
-- [ ] do a playthrough
-  - [x] smelter
-  - [x] solar
-  - [x] battery 
-  - [x] lazer cutter
-  - [x] build solar
-  - [ ] dog
-  - [ ] victory 
+## playthrough
+- [x] smelter
+- [x] solar
+- [x] battery 
+- [x] lazer cutter
+- [x] build solar
+- [ ] dog
+- [ ] victory 
 - [o] extra credit
   - [ ] assembler 
   - [ ] accumulator
@@ -62,12 +61,13 @@ x >x
 - [ ] render entities name in the UI with line() instead of kind() everywhere
   - [ ] documentation
   - [ ] agent list
-- [ ] implement uparrow/downarrow for manual command ui
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
 - [ ] ability to manually disconnect agent from TUI?
 
 ## Future
+- [ ] nail down render rate / tick rate / annimation rate
+  - [ ] can we have a speed setting (i.e. time between commands accepted by agent)?
 - [ ] fog of war
 - [ ] secrets
 - [ ] bio
