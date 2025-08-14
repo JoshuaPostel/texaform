@@ -127,11 +127,10 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                 let index = (pos.y - app.layout.surface.agents.y)
                     .checked_sub(1)
                     .map(usize::from);
-                if let Some(idx) = index {
-                    if let Some(port) = app.surface.agents.keys().nth(idx) {
+                if let Some(idx) = index
+                    && let Some(port) = app.surface.agents.keys().nth(idx) {
                         app.surface.focus = Some(Focus::Agent(*port));
                     }
-                }
             }
             if app.layout.surface.pause_menu_button.contains(pos) {
                 if let Ok(file) = File::open("assets/beep2.wav") {

@@ -22,6 +22,20 @@ pub struct OptionalTextList<T: Display + Debug> {
     hovered_style: Style,
 }
 
+impl<T: Display + Debug + Ord + Eq> OptionalTextList<T> {
+    pub fn sort(&mut self) {
+        self.items.sort();
+        self.rebuild_lines();
+    }
+
+    pub fn insert(&mut self, item: T) {
+        if !self.items.contains(&item) {
+            self.items.push(item);
+            self.sort();
+        }
+    }
+}
+
 impl<T: Display + Debug> OptionalTextList<T> {
     pub fn new(
         items: Vec<T>,
@@ -29,13 +43,10 @@ impl<T: Display + Debug> OptionalTextList<T> {
         selected_style: Style,
         hovered_style: Style,
     ) -> OptionalTextList<T> {
-        let mut lines: Vec<Line<'static>> = items
+        let lines: Vec<Line<'static>> = items
             .iter()
             .map(|i| Line::from(i.to_string()).style(style))
             .collect();
-        if let Some(line) = lines.get_mut(0) {
-            line.style = selected_style;
-        }
         OptionalTextList {
             items,
             lines,
@@ -47,6 +58,24 @@ impl<T: Display + Debug> OptionalTextList<T> {
             selected_style,
             hovered_style,
         }
+    }
+    
+    fn rebuild_lines(&mut self) {
+        self.lines = self.items
+            .iter()
+            .map(|i| Line::from(i.to_string()).style(self.style))
+            .collect();
+        if let Some(idx) = self.selected {
+            self.lines[idx].style = self.style;
+        }
+        if let Some(idx) = self.hovered {
+            self.lines[idx].style = self.hovered_style;
+        }
+    }
+
+    pub fn push(&mut self, item: T) {
+        self.items.push(item);
+        self.rebuild_lines();
     }
 
     pub fn default_style(items: Vec<T>) -> OptionalTextList<T> {

@@ -23,9 +23,9 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         y: event.row,
     };
     use MouseEventKind as Kind;
-    if let Kind::Down(MouseButton::Left) = event.kind {
-        if app.layout.tech_tree.tree.contains(pos) {
-            if let Some(idx) = app
+    if let Kind::Down(MouseButton::Left) = event.kind
+        && app.layout.tech_tree.tree.contains(pos)
+            && let Some(idx) = app
                 .layout
                 .tech_tree
                 .nodes
@@ -41,7 +41,5 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                     let _todo = tech_tree.set_research(tech_tree.selected_node);
                 }
             }
-        }
-    }
     Ok(())
 }

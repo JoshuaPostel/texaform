@@ -10,7 +10,7 @@ pub mod tech_tree;
 use ratatui::{
     Frame,
     layout::{Constraint, Flex, Layout, Rect},
-    widgets::{StatefulWidget, Widget, WidgetRef},
+    widgets::{StatefulWidget, Widget},
 };
 use tachyonfx::EffectRenderer;
 use tachyonfx::Shader;
@@ -20,14 +20,6 @@ use crate::app::App;
 pub fn render_widget_clamped<W: Widget>(frame: &mut Frame, widget: W, area: Rect) {
     frame.render_widget(widget, area.clamp(frame.area()))
 }
-
-pub fn render_widget_ref_clamped<W: WidgetRef>(frame: &mut Frame, widget: &W, area: Rect) {
-    frame.render_widget(widget, area.clamp(frame.area()))
-}
-
-//pub fn render_widget_ref_clamped<W: WidgetRef>(frame: &mut Frame, widget: W, area: Rect) {
-//    frame.render_widget_ref(widget, area.clamp(frame.area()))
-//}
 
 pub fn render_stateful_widget_clamped<W: StatefulWidget>(
     frame: &mut Frame,

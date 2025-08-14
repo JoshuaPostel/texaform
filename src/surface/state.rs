@@ -18,6 +18,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::BufWriter;
+use std::path::PathBuf;
 
 use serde_with::serde_as;
 
@@ -86,17 +87,17 @@ impl Version {
 }
 
 impl SurfaceState {
-    pub fn save(surface: &Surface, name: String) -> AppResult<()> {
+    pub fn save(surface: &Surface, name: String) -> AppResult<PathBuf> {
         let mut save_path = crate::logging::get_data_dir();
         save_path.push(name + ".texaform");
         tracing::info!("saving to: {save_path:?}");
-        let save_file = File::create(save_path)?;
+        let save_file = File::create(save_path.clone())?;
         let mut writer = BufWriter::new(save_file);
         tracing::info!("before save");
         let config = bincode::config::standard().with_limit::<1_000_000>();
         bincode::serde::encode_into_std_write(surface, &mut writer, config).unwrap();
         tracing::info!("after save");
-        Ok(())
+        Ok(save_path)
     }
 
     pub fn load(path: &std::path::Path) -> AppResult<SurfaceState> {
@@ -258,12 +259,11 @@ pub struct GameState {
 
 impl GameState {
     pub fn progress_current_tech(&mut self) {
-        if let Some(tech_node) = self.tech_tree.research_node {
-            if let Some(unlocked_entity) = self.tech_tree.progress(tech_node) {
+        if let Some(tech_node) = self.tech_tree.research_node
+            && let Some(unlocked_entity) = self.tech_tree.progress(tech_node) {
                 self.unlocked_entities.insert(unlocked_entity);
                 self.stats.research_complete += 1;
             }
-        }
     }
 
     pub fn current_tech(&self) -> Option<&Tech> {

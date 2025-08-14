@@ -110,7 +110,7 @@ pub fn render_research_description(app: &App, frame: &mut Frame, _area: Rect) {
     render_widget_clamped(frame, paragraph, app.layout.tech_tree.description);
 }
 
-pub fn current_research_content(app: &App) -> (String, Gauge) {
+pub fn current_research_content(app: &App) -> (String, Gauge<'_>) {
     match app.surface.game_state.tech_tree.researching() {
         None => {
             let label = if app.surface.game_state.tech_tree.everything_researched {

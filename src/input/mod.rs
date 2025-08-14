@@ -8,7 +8,6 @@ use crate::input::load_game::load_selected_save_file;
 use crate::surface::generation;
 use crate::ui::Screen;
 
-use std::collections::HashMap;
 
 mod documentation;
 mod load_game;
@@ -19,6 +18,7 @@ mod settings;
 mod surface;
 mod tech_tree;
 
+// TODO make a trait to keep impl in each screen's mod?
 impl Screen {
     pub fn on_load(self, app: &mut App) {
         app.save_button.button.is_hovered = false;
@@ -28,15 +28,10 @@ impl Screen {
         match self {
             Screen::SaveGame | Screen::LoadGame => {
                 app.fetch_save_files();
-                app.save_file_cache = HashMap::new();
                 load_selected_save_file(app);
-                //                match load_selected_save_file(app) {
-                //                    Ok(surface_state) => app.loading_state = LoadingState::Loaded(surface_state),
-                //                    Err(e) => {
-                //                        tracing::error!("e: {e}");
-                //                        app.loading_state = LoadingState::Failed(e.to_string());
-                //                    }
-                //                };
+                if let Some(file) = app.save_files.selected() {
+                    app.save_screen_text_box.set_content(file.to_string());
+                }
             }
             Screen::MainMenu => {
                 app.surface = generation::empty(app.event_sender.clone());

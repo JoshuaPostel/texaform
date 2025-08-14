@@ -28,9 +28,6 @@ x >x
 ```
 
 ## playthrough missing features
-- [ ] add [C] and [ESC] to `load_game` text box
-    - [ ] try reworking some widgets into the component pattern
-      * https://ratatui.rs/concepts/application-patterns/component-architecture/
 - [ ] something fun when victory researched
   - [x] show victory screen or popup with run stats
     - [x] add command counter
@@ -41,7 +38,6 @@ x >x
   - agents list should be implemented like the other lists
 
 ## bugs
-- [ ] rework `save_game` screen input
 - [ ] focus on entity > dog picks entity > focus shoud `INTERNAL_DEV`
 - [ ] load game starts at top left (0, 0)
 - [ ] why is there a delay connecting to agents?
@@ -68,7 +64,6 @@ x >x
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
 - [ ] ability to manually disconnect agent from TUI?
-- [x] internal code: rename Properties to Entities
 
 ## Future
 - [ ] fog of war
