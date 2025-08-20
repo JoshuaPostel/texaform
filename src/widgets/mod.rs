@@ -1,7 +1,8 @@
 pub mod button;
 pub mod list;
-pub mod optional_list;
 pub mod text_box;
+
+use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::layout::Position;
@@ -21,3 +22,33 @@ pub trait HandleInput {
         None
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct DoubleClickTracker<T: PartialEq> {
+    id: Option<T>,
+    last_clicked: Instant,
+}
+
+impl<T: PartialEq> Default for DoubleClickTracker<T> {
+    fn default() -> DoubleClickTracker<T> {
+        DoubleClickTracker {
+            id: None,
+            last_clicked: Instant::now(),
+        }
+    }
+}
+
+impl<T: PartialEq> DoubleClickTracker<T> {
+    /// record a click on element `id` and return weather it was a double click
+    pub fn clicked(&mut self, id: T) -> bool {
+        let was_double_click = if Some(&id) == self.id.as_ref() {
+            self.last_clicked.elapsed() < Duration::from_millis(500)
+        } else {
+            self.id = Some(id);
+            false
+        };
+        self.last_clicked = Instant::now();
+        was_double_click
+    }
+}
+

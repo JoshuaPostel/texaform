@@ -55,7 +55,7 @@ pub fn render(app: &App, frame: &mut Frame) {
         app.layout.documentation.list.inner(Margin::new(1, 1)),
     );
 
-    let document = app.documentation.selected().document();
+    let document = app.documentation.selected_unchecked().document();
     let paragraph = Paragraph::new(document)
         .block(Block::bordered().title("Document"))
         .style(Style::default().fg(Color::Green).bg(Color::Black))

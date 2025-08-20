@@ -42,10 +42,12 @@ x >x
 - [ ] why is there a delay connecting to agents?
 
 ## low priority
-- [ ] use text list for agent list
-- [ ] unify text list and optional text list
-  - use optional list everywhere? 
-  - [ ] implement offset (when not all items can fit in UI)
+- [ ] try out PhantomType for GridPosition and FramePosition
+- [ ] imple HandleInput for all widgets
+  - [ ] list
+  - [ ] buttons
+- [ ] use TextList for agent list
+- [ ] implement offset for TextList (when not all items can fit in UI)
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
 - [ ] clean up UI
   - [ ] when agent selected it is displayed twice (agent log and info)

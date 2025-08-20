@@ -25,7 +25,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         KeyCode::Char('c') | KeyCode::Char('C') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 let mut clipboard = Clipboard::new().expect("can access clipboard");
-                let document = app.documentation.selected().document();
+                let document = app.documentation.selected_unchecked().document();
                 clipboard.set_text(document).expect("can set clipboard");
             }
         }
@@ -70,7 +70,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
             }
             if app.layout.documentation.copy_button.contains(pos) {
                 let mut clipboard = Clipboard::new().expect("can access clipboard");
-                let document = app.documentation.selected().document();
+                let document = app.documentation.selected_unchecked().document();
                 clipboard.set_text(document).expect("can set clipboard");
             }
         }

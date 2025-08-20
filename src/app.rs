@@ -12,8 +12,7 @@ use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
 use crate::ui::{AppLayout, Screen};
 use crate::widgets::button::{BorderAttachedButton, Button, Location, TextButton};
-use crate::widgets::list::TextList;
-use crate::widgets::optional_list::OptionalTextList;
+use crate::widgets::list::{ClickList, DoubleClickList};
 use crate::widgets::text_box::TextBox;
 
 use std::collections::HashMap;
@@ -108,11 +107,11 @@ pub struct App {
     //pub previous_screen_button: PreviousScreenButton,
     pub previous_screen_button: BorderAttachedButton,
     pub copy_button: BorderAttachedButton,
-    pub main_menu: TextList<MainMenu>,
-    pub documentation: TextList<Document>,
+    pub main_menu: ClickList<MainMenu>,
+    pub documentation: DoubleClickList<Document>,
     pub documentation_scroll: u16,
-    pub pause_menu: TextList<PauseMenu>,
-    pub save_files: OptionalTextList<DisplayPathBuf>,
+    pub pause_menu: ClickList<PauseMenu>,
+    pub save_files: DoubleClickList<DisplayPathBuf>,
     pub layout: AppLayout,
     pub tech_tree_double_click_tracker: DoubleClickTracker<usize>,
     pub load_game_double_click_tracker: DoubleClickTracker<u16>,
@@ -174,7 +173,8 @@ impl App {
         let surface = surface::generation::empty(event_sender.clone());
 
         let list = Document::VARIANTS.to_vec();
-        let documentation = TextList::default_style(list);
+        let mut documentation = DoubleClickList::default_style(list);
+        documentation.select(0);
 
         let seed = Seed::default();
 
@@ -213,7 +213,7 @@ impl App {
             pause_menu: PauseMenu::list(),
             documentation,
             documentation_scroll: 0,
-            save_files: OptionalTextList::default(),
+            save_files: DoubleClickList::default(),
             save_screen_text_box,
             save_button,
             screen: Screen::default(),
@@ -256,9 +256,9 @@ impl App {
         }
         save_files.sort();
         let save_files = if save_files.is_empty() {
-            OptionalTextList::default_style(save_files)
+            DoubleClickList::default_style(save_files)
         } else {
-            let mut l = OptionalTextList::default_style(save_files);
+            let mut l = DoubleClickList::default_style(save_files);
             l.select(0);
             l
         };

@@ -10,8 +10,8 @@ use strum::IntoEnumIterator;
 use crate::effects::Effects;
 use crate::surface::state::Seed;
 use crate::ui::{AppLayout, center, render_effect_clamped, render_widget_clamped};
-use crate::widgets::list::TextList;
-use crate::{app::App, widgets::list::AlignedLine};
+use crate::widgets::list::{ClickList, AlignedLine};
+use crate::app::App;
 
 use std::time::Duration;
 
@@ -51,7 +51,7 @@ pub enum MainMenu {
 }
 
 impl MainMenu {
-    pub fn list() -> TextList<MainMenu> {
+    pub fn list() -> ClickList<MainMenu> {
         let list = MainMenu::iter().collect();
         let lines: Vec<AlignedLine> = vec![
             AlignedLine::from(MainMenu::NewGame.to_string()),
@@ -59,7 +59,9 @@ impl MainMenu {
             AlignedLine::from(MainMenu::Settings.to_string()),
             AlignedLine::left_right(MainMenu::Exit.to_string(), "[CTRL + D]".to_string()),
         ];
-        TextList::default_style_with_lines(list, lines)
+        let mut list = ClickList::default_style_with_lines(list, lines);
+        list.select(0);
+        list
     }
 }
 

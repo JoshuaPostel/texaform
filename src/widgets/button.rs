@@ -190,6 +190,7 @@ impl WidgetRef for BorderAttachedButton {
         }
         // Not sure why adding whitespace to button.content does not do this for us
         // possibly a ratatui optimization leading to a "bug" or unexpected behavior?
+        // use ratatui Clear widget instead?
         let cell = &mut buf[(area.left() + 1, area.bottom() - 2)];
         cell.set_char(' ');
         let cell = &mut buf[(area.right() - 2, area.top() + 1)];
