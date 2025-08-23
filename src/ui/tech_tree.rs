@@ -1,9 +1,9 @@
 use ratatui::{
     Frame,
     buffer::Buffer,
-    layout::{Constraint, Layout, Margin, Position, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     style::{Color, Style},
-    widgets::{Block, Gauge, Paragraph, Widget, Wrap},
+    widgets::{Block, Paragraph, Widget, Wrap},
 };
 
 use petgraph::graph::NodeIndex;
@@ -110,66 +110,17 @@ pub fn render_research_description(app: &App, frame: &mut Frame, _area: Rect) {
     render_widget_clamped(frame, paragraph, app.layout.tech_tree.description);
 }
 
-pub fn current_research_content(app: &App) -> (String, Gauge<'_>) {
-    match app.surface.game_state.tech_tree.researching() {
-        None => {
-            let label = if app.surface.game_state.tech_tree.everything_researched {
-                "All research complete"
-            } else {
-                "Select a technology"
-            };
-            let paragraph = Gauge::default()
-                .style(Style::default().fg(Color::Green).bg(Color::Black))
-                .label(label);
-            ("Nothing".to_string(), paragraph)
-        }
-        Some(tech) => {
-            let guage = Gauge::default()
-                .gauge_style(Style::default().fg(Color::Green).bg(Color::Black))
-                .label(format!(
-                    "{}/{}",
-                    tech.progress_numerator, tech.progress_denominator
-                ))
-                .percent(
-                    (100.0 * f64::from(tech.progress_numerator)
-                        / f64::from(tech.progress_denominator)) as u16,
-                );
-            (tech.kind.to_string(), guage)
-        }
-    }
-}
-
 pub fn render_current_research(app: &App, frame: &mut Frame, area: Rect) {
-    //    let name = match app.surface.game_state.tech_tree.researching() {
-    //        None => {
-    //            let paragraph = Paragraph::new("Select a technology")
-    //                .wrap(Wrap { trim: false })
-    //                .style(Style::default().fg(Color::Green).bg(Color::Black));
-    //            render_widget_clamped(frame, paragraph, area.inner(Margin::new(1, 1)));
-    //            "Nothing"
-    //        }
-    //        Some(tech) => {
-    //            let guage = Gauge::default()
-    //                .gauge_style(Style::default().fg(Color::Green).bg(Color::Black))
-    //                .label(format!(
-    //                    "{}/{}",
-    //                    tech.progress_numerator, tech.progress_denominator
-    //                ))
-    //                .percent(
-    //                    (100.0 * f64::from(tech.progress_numerator)
-    //                        / f64::from(tech.progress_denominator)) as u16,
-    //                );
-    //            render_widget_clamped(frame, guage, area.inner(Margin::new(1, 1)));
-    //            &tech.name
-    //        }
-    //    };
-    let (name, guage) = current_research_content(app);
-    let block = Block::bordered()
-        .title("Researching: ".to_string() + &name)
-        .border_style(Style::default().fg(Color::Green).bg(Color::Black));
-
-    render_widget_clamped(frame, block, area);
-    render_widget_clamped(frame, guage, area.inner(Margin::new(1, 1)));
+    // a bit hacky and a clone in render hotloop...
+    // maybe just manually overwrite the three '[T]' cells?
+    let (titles, _) = app.surface.game_state.tech_tree.current_research_content();
+    let [l, _, _] = titles;
+    let hack = app
+        .surface
+        .current_research_button
+        .clone()
+        .with_titles([l, None, None]);
+    render_widget_clamped(frame, &hack, area);
 }
 
 fn render_nodes(tech_tree: &TechTree, app: &App, frame: &mut Frame) {

@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 
@@ -20,9 +18,9 @@ mod tech_tree;
 // TODO make a trait to keep impl in each screen's mod?
 impl Screen {
     pub fn on_load(self, app: &mut App) {
+        app.pause_menu_button.hovered(false);
         app.save_button.button.is_hovered = false;
-        app.pause_menu_button.is_hovered = false;
-        app.current_research_button.is_hovered = false;
+        app.surface.current_research_button.hovered(false);
         app.previous_screen_button.button.is_hovered = false;
         match self {
             Screen::SaveGame | Screen::LoadGame => {
@@ -99,34 +97,5 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         Screen::Surface => surface::handle_mouse_events(event, app).await,
         Screen::Documentation => documentation::handle_mouse_events(event, app).await,
         Screen::TechTree => tech_tree::handle_mouse_events(event, app).await,
-    }
-}
-
-#[derive(Debug)]
-pub struct DoubleClickTracker<T: PartialEq> {
-    id: Option<T>,
-    last_clicked: Instant,
-}
-
-impl<T: PartialEq> Default for DoubleClickTracker<T> {
-    fn default() -> DoubleClickTracker<T> {
-        DoubleClickTracker {
-            id: None,
-            last_clicked: Instant::now(),
-        }
-    }
-}
-
-impl<T: PartialEq> DoubleClickTracker<T> {
-    /// record a click on element `id` and return weather it was a double click
-    pub fn clicked(&mut self, id: T) -> bool {
-        let was_double_click = if Some(&id) == self.id.as_ref() {
-            self.last_clicked.elapsed() < Duration::from_millis(500)
-        } else {
-            self.id = Some(id);
-            false
-        };
-        self.last_clicked = Instant::now();
-        was_double_click
     }
 }

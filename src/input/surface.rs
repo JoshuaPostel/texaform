@@ -89,17 +89,44 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         x: event.column,
         y: event.row,
     };
-    match event.kind {
-        Kind::Moved => {
-            app.pause_menu_button.is_hovered = app.layout.surface.pause_menu_button.contains(pos);
-            app.current_research_button.is_hovered = app.layout.surface.tech.contains(pos);
-            if app.surface.game_state.tutorial_state != Tutorial::Complete {
-                app.tutorial_previous_button.is_hovered =
-                    app.layout.surface.tutorial.previous_button.contains(pos);
-                app.tutorial_next_button.is_hovered =
-                    app.layout.surface.tutorial.next_button.contains(pos);
-            }
+    if app.surface.game_state.tutorial_state != Tutorial::Complete {
+        if app
+            .tutorial_previous_button
+            .handle_mouse(app.layout.surface.tutorial.previous_button, pos, event)
+            .is_some()
+        {
+            app.surface.game_state.tutorial_state.previous();
+            return Ok(());
         }
+        if app
+            .tutorial_next_button
+            .handle_mouse(app.layout.surface.tutorial.next_button, pos, event)
+            .is_some()
+        {
+            app.surface.game_state.tutorial_state.next();
+            return Ok(());
+        }
+    }
+    if app.surface.current_research_button.handle_mouse(app.layout.surface.tech, pos, event).is_some() {
+        app.set_screen(Screen::TechTree);
+    }
+    if app.pause_menu_button.handle_mouse(app.layout.surface.pause_menu_button, pos, event).is_some() {
+        if let Ok(file) = File::open("assets/beep2.wav") {
+            let reader = BufReader::new(file);
+            let source = Decoder::new(reader).unwrap();
+
+            let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+            let sink = Sink::try_new(&stream_handle).unwrap();
+            sink.append(source);
+            sink.play();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            sink.detach();
+        }
+        app.set_screen(Screen::PauseMenu);
+        return Ok(());
+    }
+
+    match event.kind {
         Kind::Down(MouseButton::Left) => {
             info!("clicked: col {}, row {}", event.column, event.row);
             match app.layout.surface.agent.text_box {
@@ -140,9 +167,6 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                     None => tracing::info!("None branch"),
                 }
             }
-            if app.layout.surface.tech.contains(pos) {
-                app.set_screen(Screen::TechTree);
-            }
             if app.layout.surface.agents.contains(pos) {
                 let index = (pos.y - app.layout.surface.agents.y)
                     .checked_sub(1)
@@ -151,29 +175,6 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                     && let Some(port) = app.surface.agents.keys().nth(idx)
                 {
                     app.surface.focus = Some(Focus::Agent(*port));
-                }
-            }
-            if app.layout.surface.pause_menu_button.contains(pos) {
-                if let Ok(file) = File::open("assets/beep2.wav") {
-                    let reader = BufReader::new(file);
-                    let source = Decoder::new(reader).unwrap();
-
-                    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-                    let sink = Sink::try_new(&stream_handle).unwrap();
-                    sink.append(source);
-                    sink.play();
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    sink.detach();
-                }
-                app.set_screen(Screen::PauseMenu);
-
-                return Ok(());
-            }
-            if app.surface.game_state.tutorial_state != Tutorial::Complete {
-                if app.layout.surface.tutorial.previous_button.contains(pos) {
-                    app.surface.game_state.tutorial_state.previous();
-                } else if app.layout.surface.tutorial.next_button.contains(pos) {
-                    app.surface.game_state.tutorial_state.next();
                 }
             }
         }

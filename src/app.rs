@@ -1,19 +1,19 @@
 use ratatui::layout::Rect;
-use ratatui::widgets::{Gauge, Paragraph};
+use ratatui::widgets::Paragraph;
 use strum::VariantArray;
 
 use crate::effects::Effects;
 use crate::event::Event;
-use crate::input::DoubleClickTracker;
 use crate::surface::state::{Seed, SurfaceState};
 use crate::surface::{self, Surface};
 use crate::ui::documentation::Document;
 use crate::ui::main_menu::MainMenu;
 use crate::ui::pause_menu::PauseMenu;
 use crate::ui::{AppLayout, Screen};
-use crate::widgets::button::{BorderAttachedButton, Button, Location, TextButton};
-use crate::widgets::list::TextList;
-use crate::widgets::optional_list::OptionalTextList;
+use crate::widgets::DoubleClickTracker;
+use crate::widgets::button::{BorderedButton, TextButton};
+use crate::widgets::depreciated_button::{BorderAttachedButton, Location};
+use crate::widgets::list::{ClickList, DoubleClickList};
 use crate::widgets::text_box::TextBox;
 
 use std::collections::HashMap;
@@ -83,10 +83,11 @@ pub enum LoadingState {
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    pub pause_menu_button: Button<Paragraph<'static>>,
-    pub current_research_button: Button<Gauge<'static>>,
-    pub tutorial_previous_button: TextButton,
-    pub tutorial_next_button: TextButton,
+    pub pause_menu_button: BorderedButton<Paragraph<'static>>,
+    pub tutorial_previous_button: TextButton<'static>,
+    pub tutorial_next_button: TextButton<'static>,
+    // TODO for internal dev only
+    // testing out storing smart pointer to the widget's area
     pub seed: Seed,
 
     pub prev_tick: Duration,
@@ -108,14 +109,13 @@ pub struct App {
     //pub previous_screen_button: PreviousScreenButton,
     pub previous_screen_button: BorderAttachedButton,
     pub copy_button: BorderAttachedButton,
-    pub main_menu: TextList<MainMenu>,
-    pub documentation: TextList<Document>,
+    pub main_menu: ClickList<MainMenu>,
+    pub documentation: DoubleClickList<Document>,
     pub documentation_scroll: u16,
-    pub pause_menu: TextList<PauseMenu>,
-    pub save_files: OptionalTextList<DisplayPathBuf>,
+    pub pause_menu: ClickList<PauseMenu>,
+    pub save_files: DoubleClickList<DisplayPathBuf>,
     pub layout: AppLayout,
     pub tech_tree_double_click_tracker: DoubleClickTracker<usize>,
-    pub load_game_double_click_tracker: DoubleClickTracker<u16>,
 
     pub save_screen_text_box: TextBox,
     pub save_button: BorderAttachedButton,
@@ -156,8 +156,7 @@ impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(event_sender: UnboundedSender<Event>, width: u16, height: u16) -> Self {
         let p = Paragraph::new("Menu [M]").centered();
-        let pause_menu_button = Button::new(p);
-        let current_research_button = Button::new(Gauge::default());
+        let pause_menu_button = BorderedButton::new(p).with_default_border();
         let tutorial_previous_button = TextButton::new("<PREV [P]");
         let tutorial_next_button = TextButton::new("[N] NEXT>");
         let copy_button =
@@ -174,7 +173,8 @@ impl App {
         let surface = surface::generation::empty(event_sender.clone());
 
         let list = Document::VARIANTS.to_vec();
-        let documentation = TextList::default_style(list);
+        let mut documentation = DoubleClickList::default_style(list);
+        documentation.select(0);
 
         let seed = Seed::default();
 
@@ -196,11 +196,12 @@ impl App {
         //        ).with_cell_selection(filter)
         //            ;
 
+        let layout = AppLayout::default();
+
         let mut app = App {
             running: true,
             seed,
             pause_menu_button,
-            current_research_button,
             tutorial_previous_button,
             tutorial_next_button,
             copy_button,
@@ -213,15 +214,15 @@ impl App {
             pause_menu: PauseMenu::list(),
             documentation,
             documentation_scroll: 0,
-            save_files: OptionalTextList::default(),
+            save_files: DoubleClickList::default(),
             save_screen_text_box,
             save_button,
             screen: Screen::default(),
             previous_screen: Screen::default(),
             previous_screen_button,
-            layout: AppLayout::default(),
+            //layout: AppLayout::default(),
+            layout,
             tech_tree_double_click_tracker: DoubleClickTracker::default(),
-            load_game_double_click_tracker: DoubleClickTracker::default(),
             event_sender,
             effects: Effects::new(),
         };
@@ -256,9 +257,9 @@ impl App {
         }
         save_files.sort();
         let save_files = if save_files.is_empty() {
-            OptionalTextList::default_style(save_files)
+            DoubleClickList::default_style(save_files)
         } else {
-            let mut l = OptionalTextList::default_style(save_files);
+            let mut l = DoubleClickList::default_style(save_files);
             l.select(0);
             l
         };

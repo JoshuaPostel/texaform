@@ -51,11 +51,11 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_widget_clamped(frame, border, app.layout.documentation.list);
     render_widget_clamped(
         frame,
-        app.documentation.clone(),
+        &app.documentation,
         app.layout.documentation.list.inner(Margin::new(1, 1)),
     );
 
-    let document = app.documentation.selected().document();
+    let document = app.documentation.selected_unchecked().document();
     let paragraph = Paragraph::new(document)
         .block(Block::bordered().title("Document"))
         .style(Style::default().fg(Color::Green).bg(Color::Black))

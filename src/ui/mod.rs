@@ -107,6 +107,26 @@ impl AppLayout {
         }
     }
 
+    pub fn update_self(&mut self, new: Self) {
+        self.width = new.width;
+        self.height = new.height;
+        self.previous_screen_button = new.previous_screen_button;
+        self.main_menu = new.main_menu;
+        //self.main_menu = main_menu::MainMenuLayout::new(width, height);
+        //        AppLayout {
+        //            width,
+        //            height,
+        //            previous_screen_button: app.previous_screen_button.resize(width, height),
+        //            main_menu: main_menu::MainMenuLayout::new(width, height),
+        //            pause_menu: pause_menu::PauseMenuLayout::new(width, height),
+        //            surface: surface::SurfaceLayout::new(width, height),
+        //            load_game: load_game::LoadGameLayout::new(width, height),
+        //            save_game: save_game::SaveGameLayout::new(width, height, app),
+        //            documentation: documentation::DocumentationLayout::new(width, height, app),
+        //            tech_tree: tech_tree::TechTreeLayout::new(width, height, app),
+        //        }
+    }
+
     pub fn whole_screen(&self) -> Rect {
         Rect {
             x: 0,
@@ -128,6 +148,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         Screen::LoadGame => load_game::render(app, frame),
         Screen::SaveGame => save_game::render(app, frame),
         Screen::Surface => {
+            // TODO remove the mut here
             surface::render(app, frame);
             // TODO
             // app.surface.render_effects();

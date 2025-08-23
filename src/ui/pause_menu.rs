@@ -6,9 +6,9 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
+use crate::app::App;
 use crate::ui::{center, render_widget_clamped};
-use crate::widgets::list::TextList;
-use crate::{app::App, widgets::list::AlignedLine};
+use crate::widgets::list::{AlignedLine, ClickList};
 
 #[derive(Debug, Default)]
 pub struct PauseMenuLayout {
@@ -41,7 +41,7 @@ pub enum PauseMenu {
 }
 
 impl PauseMenu {
-    pub fn list() -> TextList<PauseMenu> {
+    pub fn list() -> ClickList<PauseMenu> {
         let list = PauseMenu::iter().collect();
         let lines: Vec<AlignedLine> = vec![
             AlignedLine::left_right(PauseMenu::Continue.to_string(), "[ESC]".to_string()),
@@ -51,7 +51,9 @@ impl PauseMenu {
             AlignedLine::from(PauseMenu::Settings.to_string()),
             AlignedLine::from(PauseMenu::MainMenu.to_string()),
         ];
-        TextList::default_style_with_lines(list, lines)
+        let mut list = ClickList::default_style_with_lines(list, lines);
+        list.select(0);
+        list
     }
 }
 
@@ -62,5 +64,5 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     render_widget_clamped(frame, block, app.layout.whole_screen());
 
-    render_widget_clamped(frame, app.pause_menu.clone(), app.layout.pause_menu.menu);
+    render_widget_clamped(frame, &app.pause_menu, app.layout.pause_menu.menu);
 }

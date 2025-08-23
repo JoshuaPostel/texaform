@@ -1,0 +1,201 @@
+use ratatui::{
+    buffer::Buffer,
+    layout::{Alignment, Margin, Rect},
+    style::{Color, Style, Styled},
+    text::Line,
+    widgets::{Block, BorderType, Paragraph, Widget, WidgetRef, block::Title},
+};
+
+#[derive(Debug, Clone)]
+pub struct Button<W: Widget + WidgetRef + Styled> {
+    pub content: W,
+    pub titles: [Option<String>; 3],
+    pub is_pressed: bool,
+    pub is_hovered: bool,
+    pub style: Style,
+    pub pressed_style: Style,
+    pub hovered_style: Style,
+}
+
+impl<W: Widget + WidgetRef + Styled> Button<W> {
+    pub fn new(content: W) -> Button<W> {
+        Button {
+            content,
+            titles: [None, None, None],
+            is_pressed: false,
+            is_hovered: false,
+            style: Style::new().bg(Color::Black).fg(Color::Green),
+            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
+            hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
+        }
+    }
+
+    pub fn with_content(&self, content: W) -> Button<W> {
+        Button {
+            content,
+            titles: self.titles.clone(),
+            ..*self
+        }
+    }
+
+    pub fn with_content_and_title(&self, content: W, titles: [Option<String>; 3]) -> Button<W> {
+        Button {
+            titles,
+            content,
+            ..*self
+        }
+    }
+}
+
+impl<W: Widget + WidgetRef + Styled> WidgetRef for Button<W> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let style = match (self.is_pressed, self.is_hovered) {
+            (true, _) => self.pressed_style,
+            (false, true) => self.hovered_style,
+            _ => self.style,
+        };
+        // TODO PERF move to struct itself
+        let mut block = Block::bordered()
+            .border_type(BorderType::Thick)
+            .border_style(Style::default().bg(Color::Black))
+            .style(style);
+        if let Some(title) = &self.titles[0] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        }
+        if let Some(title) = &self.titles[1] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        }
+        if let Some(title) = &self.titles[2] {
+            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        }
+        block.render(area, buf);
+        let inner = area.inner(Margin::new(1, 1));
+        self.content.render_ref(inner, buf);
+        buf.set_style(inner, style)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct TextButton {
+    pub content: &'static str,
+    pub is_pressed: bool,
+    pub is_hovered: bool,
+    pub style: Style,
+    pub pressed_style: Style,
+    pub hovered_style: Style,
+}
+
+impl TextButton {
+    pub fn new(content: &'static str) -> TextButton {
+        TextButton {
+            content,
+            is_pressed: false,
+            is_hovered: false,
+            style: Style::new().bg(Color::Black).fg(Color::Green),
+            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
+            hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
+        }
+    }
+
+    pub fn width(&self) -> u16 {
+        self.content.len() as u16
+    }
+}
+
+impl Widget for TextButton {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let style = match (self.is_pressed, self.is_hovered) {
+            (true, _) => self.pressed_style,
+            (false, true) => self.hovered_style,
+            _ => self.style,
+        };
+        Line::from(self.content).style(style).render(area, buf);
+    }
+}
+
+#[derive(Clone)]
+pub enum Location {
+    East(i16),
+    SouthEast,
+    // implement the rest as needed
+}
+
+// delay refactor into Button PhandomData approach until after ratatui 0.30.0 upgrade
+// which adds border merging
+#[derive(Clone)]
+pub struct BorderAttachedButton {
+    pub button: Button<Paragraph<'static>>,
+    attached_direction: Location,
+    n_chars: u16,
+}
+
+impl BorderAttachedButton {
+    pub fn update(&mut self, text: String) {
+        self.n_chars = text.len() as u16;
+        self.button.content = Paragraph::new(text).centered();
+    }
+
+    pub fn resize(&self, width: u16, height: u16) -> Rect {
+        match self.attached_direction {
+            Location::SouthEast => Rect {
+                x: width - (self.n_chars + 2),
+                y: height - 3,
+                width: self.n_chars + 2,
+                height: 3,
+            },
+            Location::East(i) => Rect {
+                x: width - (self.n_chars + 2),
+                y: ((height as i16) - i) as u16,
+                width: self.n_chars + 2,
+                height: 3,
+            },
+        }
+    }
+
+    pub fn new(text: String, attached_direction: Location) -> BorderAttachedButton {
+        let n_chars = text.len() as u16;
+        let content = Paragraph::new(text);
+
+        let button = Button {
+            content,
+            titles: [None, None, None],
+            is_pressed: false,
+            is_hovered: false,
+            style: Style::new().bg(Color::Black).fg(Color::Green),
+            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
+            hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
+        };
+        BorderAttachedButton {
+            button,
+            attached_direction,
+            n_chars,
+        }
+    }
+}
+
+impl WidgetRef for BorderAttachedButton {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self.button.render_ref(area, buf);
+        match self.attached_direction {
+            Location::East(_) => {
+                let cell = &mut buf[(area.right() - 1, area.top())];
+                cell.set_char('┪');
+                let cell = &mut buf[(area.right() - 1, area.bottom() - 1)];
+                cell.set_char('┩');
+            }
+            Location::SouthEast => {
+                let cell = &mut buf[(area.right() - 1, area.top())];
+                cell.set_char('┪');
+                let cell = &mut buf[(area.left(), area.bottom() - 1)];
+                cell.set_char('┺');
+            }
+        }
+        // Not sure why adding whitespace to button.content does not do this for us
+        // possibly a ratatui optimization leading to a "bug" or unexpected behavior?
+        // use ratatui Clear widget instead?
+        let cell = &mut buf[(area.left() + 1, area.bottom() - 2)];
+        cell.set_char(' ');
+        let cell = &mut buf[(area.right() - 2, area.top() + 1)];
+        cell.set_char(' ');
+    }
+}

@@ -1,6 +1,7 @@
 use ratatui::Frame;
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Color;
+use ratatui::widgets::Gauge;
 
 use tachyonfx::{Effect, fx};
 
@@ -16,6 +17,7 @@ use crate::event::Event;
 use crate::tech_tree::TechTree;
 use crate::ui::render_effect_clamped;
 use crate::utils::{idx_to_pos, pos_to_idx};
+use crate::widgets::button::BorderedButton;
 
 use thiserror::Error;
 
@@ -110,12 +112,14 @@ pub struct Surface {
     pub victory_stats: Option<VictoryStats>,
 
     #[serde(skip)]
+    pub current_research_button: BorderedButton<Gauge<'static>>,
+
+    #[serde(skip)]
     pub hud: Hud,
 
     #[serde(skip)]
     pub focus: Option<Focus>,
 
-    // for 
     #[serde(skip)]
     pub previous_command_counter: u8,
 
@@ -610,6 +614,12 @@ impl Surface {
                 self.grid.insert(&pos, Gent::Empty);
                 "OKAY".to_string()
             }
+            UpdateEnum::Research => {
+                let (titles, guage) = self.game_state.tech_tree.current_research_content();
+                self.current_research_button.set_content(guage);
+                self.current_research_button.set_titles(titles);
+                "OKAY".to_string()
+            }
             UpdateEnum::Reply(reply) => {
                 self.grid.insert(&pos, Gent::Age(agent));
                 reply
@@ -704,6 +714,9 @@ impl Surface {
         event_sender: UnboundedSender<Event>,
     ) -> Surface {
         let tech_tree = TechTree::default();
+
+        let (titles, guage) = tech_tree.current_research_content();
+        let current_research_button = BorderedButton::new(guage).with_titles(titles);
         let research_count = tech_tree.graph.raw_nodes().iter().count();
         let game_state = GameState {
             unlocked_entities: HashSet::from([Entity::Dog]),
@@ -726,6 +739,7 @@ impl Surface {
             focus: None,
             previous_command_counter: 0,
             hud: Hud::default(),
+            current_research_button,
         };
         let comms = Comms::new(&surface, None, Entity::HUD).await;
         surface.agents.insert(3333, comms);

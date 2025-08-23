@@ -1,6 +1,6 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Margin, Rect},
+    layout::{Constraint, Direction, Layout, Margin, Position, Rect},
     style::{Color, Stylize},
     widgets::Block,
 };
@@ -10,6 +10,7 @@ use crate::ui::load_game::{
     render_save_file_metadata, render_save_file_preview, save_file_boarder,
 };
 use crate::ui::render_widget_clamped;
+use crate::utils::relative_position;
 
 #[derive(Debug, Default)]
 pub struct SaveGameLayout {
@@ -20,7 +21,29 @@ pub struct SaveGameLayout {
     pub save_button: Rect,
 }
 
+#[allow(dead_code)]
+pub enum SaveGameArea {
+    SaveFiles(Position),
+    SaveFileInput(Position),
+    SurfacePreview(Position),
+    Metadata(Position),
+    SaveButton(Position),
+}
+
 impl SaveGameLayout {
+    // this might make handle_mouse_event nicer to implement
+    #[allow(dead_code)]
+    fn sketch_of_macro(self, position: Position) -> Option<SaveGameArea> {
+        if let Some(rel_pos) = relative_position(self.save_files, position) {
+            return Some(SaveGameArea::SaveFiles(rel_pos));
+        }
+        if let Some(rel_pos) = relative_position(self.save_file_input, position) {
+            return Some(SaveGameArea::SaveFileInput(rel_pos));
+        }
+        None
+        // todo cover all
+    }
+
     pub fn new(width: u16, height: u16, app: &App) -> SaveGameLayout {
         let columns = Layout::default()
             .direction(Direction::Horizontal)
@@ -57,7 +80,7 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     render_widget_clamped(
         frame,
-        app.save_files.clone(),
+        &app.save_files,
         app.layout.save_game.save_files.inner(Margin::new(1, 1)),
     );
 

@@ -15,7 +15,6 @@ use ratatui::prelude::*;
 use crate::app::{App, InputMode};
 use crate::surface::grid::Gent;
 use crate::surface::{Focus, Surface};
-use crate::ui::tech_tree::current_research_content;
 use crate::ui::{render_stateful_widget_clamped, render_widget_clamped};
 
 #[derive(Debug, Default)]
@@ -474,20 +473,20 @@ fn render_tutorial(app: &App, frame: &mut Frame) {
     render_widget_clamped(frame, old, app.layout.surface.tutorial.area);
     render_widget_clamped(
         frame,
-        app.tutorial_previous_button,
+        &app.tutorial_previous_button,
         app.layout.surface.tutorial.previous_button,
     );
     render_widget_clamped(
         frame,
-        app.tutorial_next_button,
+        &app.tutorial_next_button,
         app.layout.surface.tutorial.next_button,
     );
 }
 
+// TODO remove the mut here
 pub fn render(app: &mut App, frame: &mut Frame) {
     render_surface_grid(app, frame);
     render_surface_overlay(app, frame);
-    //render_info(app, frame);
     render_info(app, frame);
     render_agent_log(app, frame);
     render_agents_list(app, frame);
@@ -496,21 +495,17 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         render_tutorial(app, frame)
     }
 
-    let (name, guage) = current_research_content(app);
-    let titles = [
-        Some(format!("Researching: {name}")),
-        None,
-        Some("[T]".to_string()),
-    ];
-    let tech = app
-        .current_research_button
-        .with_content_and_title(guage, titles);
-    render_widget_clamped(frame, &tech, app.layout.surface.tech);
+    render_widget_clamped(
+        frame,
+        &app.surface.current_research_button,
+        app.layout.surface.tech,
+    );
 
     render_widget_clamped(
         frame,
         &app.pause_menu_button,
         app.layout.surface.pause_menu_button,
     );
+    // TODO move elsewhere so we can render without mut (&App)
     render_surface_grid_fx(app, frame);
 }

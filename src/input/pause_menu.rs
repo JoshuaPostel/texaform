@@ -1,12 +1,14 @@
 use crate::app::{App, AppResult};
 use crate::ui::Screen;
-use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::layout::Position;
 
-use crate::ui::pause_menu::PauseMenu;
 
-fn on_select(app: &mut App) {
-    match app.pause_menu.selected() {
+use crate::ui::pause_menu::PauseMenu;
+use crate::widgets::HandleInput;
+
+fn on_select(app: &mut App, screen: PauseMenu) {
+    match screen {
         PauseMenu::Continue => app.set_screen(Screen::Surface),
         PauseMenu::SaveGame => app.set_screen(Screen::SaveGame),
         PauseMenu::Documentation => app.set_screen(Screen::Documentation),
@@ -17,11 +19,11 @@ fn on_select(app: &mut App) {
 }
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+    if let Some(screen) = app.pause_menu.handle_key_event(key_event) {
+        on_select(app, screen);
+    }
     match key_event.code {
         KeyCode::Esc => app.set_screen(Screen::Surface),
-        KeyCode::Up | KeyCode::Char('k') => app.pause_menu.select_previous(),
-        KeyCode::Down | KeyCode::Char('j') => app.pause_menu.select_next(),
-        KeyCode::Enter => on_select(app),
         KeyCode::Char('D') | KeyCode::Char('d') => {
             app.set_screen(Screen::Documentation);
         }
@@ -38,21 +40,11 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         x: event.column,
         y: event.row,
     };
-    use MouseEventKind as Kind;
-    match event.kind {
-        Kind::Moved => {
-            if app.layout.pause_menu.menu.contains(pos) {
-                let idx = pos.y.saturating_sub(app.layout.pause_menu.menu.y);
-                app.pause_menu.select(idx as usize);
-            }
-        }
-        // TODO BUG: does not line up with cursor
-        Kind::Down(MouseButton::Left) => {
-            if app.layout.pause_menu.menu.contains(pos) {
-                on_select(app)
-            }
-        }
-        _ => (),
+    if let Some(screen) = app
+        .pause_menu
+        .handle_mouse(app.layout.pause_menu.menu, pos, event)
+    {
+        on_select(app, screen);
     }
     Ok(())
 }

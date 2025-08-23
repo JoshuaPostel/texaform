@@ -48,7 +48,7 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     render_widget_clamped(
         frame,
-        app.save_files.clone(),
+        &app.save_files,
         app.layout.load_game.save_files.inner(Margin::new(1, 1)),
     );
 

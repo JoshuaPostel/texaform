@@ -1,198 +1,144 @@
+use std::marker::PhantomData;
+
+use crate::widgets::HandleInput;
+use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Margin, Rect},
+    prelude::Position,
     style::{Color, Style, Styled},
-    text::Line,
-    widgets::{Block, BorderType, Paragraph, Widget, WidgetRef, block::Title},
+    text::Span,
+    widgets::{Block, BorderType, WidgetRef, block::Title},
 };
 
+// TODO make this str
+pub type Titles = [Option<String>; 3];
+
 #[derive(Debug, Clone)]
-pub struct Button<W: Widget + WidgetRef + Styled> {
+pub struct Button<K, W: WidgetRef + Styled<Item = W>> {
     pub content: W,
-    pub titles: [Option<String>; 3],
-    pub is_pressed: bool,
-    pub is_hovered: bool,
-    pub style: Style,
-    pub pressed_style: Style,
-    pub hovered_style: Style,
+    border: Option<Block<'static>>,
+    style: Style,
+    default_style: Style,
+    // if we want/need a toggle style button or want to handle MouseEvent::{Up,Down} "properly"
+    // pressed_style: Style,
+    hovered_style: Style,
+    // for polymorphism over impl WidgetRef
+    kind: PhantomData<K>,
 }
 
-impl<W: Widget + WidgetRef + Styled> Button<W> {
-    pub fn new(content: W) -> Button<W> {
+impl<K, W: Clone + WidgetRef + Styled<Item = W>> HandleInput for Button<K, W> {
+    type Output = ();
+    fn handle_mouse_event(&mut self, event: MouseEvent, _rel_pos: Position) -> Option<()> {
+        match event.kind {
+            MouseEventKind::Down(MouseButton::Left) => Some(()),
+            MouseEventKind::Moved => {
+                self.hovered(true);
+                None
+            }
+            _ => None,
+        }
+    }
+
+    fn on_mouse_elsewhere(&mut self) {
+        self.hovered(false);
+    }
+}
+
+impl<K, W: Clone + WidgetRef + Styled<Item = W>> Button<K, W> {
+    pub fn new<T: Into<W>>(content: T) -> Self {
         Button {
-            content,
-            titles: [None, None, None],
-            is_pressed: false,
-            is_hovered: false,
+            content: content.into(),
+            border: None,
             style: Style::new().bg(Color::Black).fg(Color::Green),
-            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
+            default_style: Style::new().bg(Color::Black).fg(Color::Green),
             hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
+            kind: PhantomData,
         }
     }
 
-    pub fn with_content(&self, content: W) -> Button<W> {
-        Button {
-            content,
-            titles: self.titles.clone(),
-            ..*self
+    pub fn hovered(&mut self, hovered: bool) {
+        if hovered {
+            self.style = self.hovered_style;
+        } else {
+            self.style = self.default_style;
         }
     }
 
-    pub fn with_content_and_title(&self, content: W, titles: [Option<String>; 3]) -> Button<W> {
+    pub fn set_content(&mut self, content: W) {
+        self.content = content;
+    }
+
+    pub fn set_titles(&mut self, titles: [Option<String>; 3]) {
+        self.border = Some(into_block(titles));
+    }
+
+    pub fn with_default_border(self) -> Self {
         Button {
-            titles,
+            border: Some(
+                Block::bordered()
+                    .border_type(BorderType::Thick)
+                    .border_style(Style::default().bg(Color::Black).fg(Color::Green)),
+            ),
+            ..self
+        }
+    }
+
+    pub fn with_content(self, content: W) -> Self {
+        Button {
             content,
-            ..*self
+            border: self.border.clone(),
+            ..self
+        }
+    }
+
+    pub fn with_titles(self, titles: [Option<String>; 3]) -> Self {
+        Button {
+            border: Some(into_block(titles)),
+            ..self
         }
     }
 }
 
-impl<W: Widget + WidgetRef + Styled> WidgetRef for Button<W> {
+fn into_block(titles: Titles) -> Block<'static> {
+    let mut block = Block::bordered()
+        .border_type(BorderType::Thick)
+        .border_style(Style::default().bg(Color::Black).fg(Color::Green));
+    let [l, c, r] = titles;
+    if let Some(title) = l {
+        block = block.title(Title::from(title).alignment(Alignment::Left))
+    }
+    if let Some(title) = c {
+        block = block.title(Title::from(title).alignment(Alignment::Center))
+    }
+    if let Some(title) = r {
+        block = block.title(Title::from(title).alignment(Alignment::Right))
+    }
+    block
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+pub struct TextButtonType;
+pub type TextButton<'a> = Button<TextButtonType, Span<'a>>;
+
+impl WidgetRef for TextButton<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let style = match (self.is_pressed, self.is_hovered) {
-            (true, _) => self.pressed_style,
-            (false, true) => self.hovered_style,
-            _ => self.style,
-        };
-        // TODO PERF move to struct itself
-        let mut block = Block::bordered()
-            .border_type(BorderType::Thick)
-            .border_style(Style::default().bg(Color::Black))
-            .style(style);
-        if let Some(title) = &self.titles[0] {
-            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
+        self.content.render_ref(area, buf);
+        buf.set_style(area, self.style);
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+pub struct BorderedButtonType;
+pub type BorderedButton<T> = Button<BorderedButtonType, T>;
+
+impl<W: WidgetRef + Styled<Item = W>> WidgetRef for BorderedButton<W> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        if let Some(border) = &self.border {
+            border.render_ref(area, buf);
         }
-        if let Some(title) = &self.titles[1] {
-            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
-        }
-        if let Some(title) = &self.titles[2] {
-            block = block.title(Title::from(title.as_str()).alignment(Alignment::Left))
-        }
-        block.render(area, buf);
         let inner = area.inner(Margin::new(1, 1));
         self.content.render_ref(inner, buf);
-        buf.set_style(inner, style)
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct TextButton {
-    pub content: &'static str,
-    pub is_pressed: bool,
-    pub is_hovered: bool,
-    pub style: Style,
-    pub pressed_style: Style,
-    pub hovered_style: Style,
-}
-
-impl TextButton {
-    pub fn new(content: &'static str) -> TextButton {
-        TextButton {
-            content,
-            is_pressed: false,
-            is_hovered: false,
-            style: Style::new().bg(Color::Black).fg(Color::Green),
-            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
-            hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
-        }
-    }
-
-    pub fn width(&self) -> u16 {
-        self.content.len() as u16
-    }
-}
-
-impl Widget for TextButton {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let style = match (self.is_pressed, self.is_hovered) {
-            (true, _) => self.pressed_style,
-            (false, true) => self.hovered_style,
-            _ => self.style,
-        };
-        Line::from(self.content).style(style).render(area, buf);
-    }
-}
-
-#[derive(Clone)]
-pub enum Location {
-    East(i16),
-    SouthEast,
-    // implement the rest as needed
-}
-
-#[derive(Clone)]
-pub struct BorderAttachedButton {
-    pub button: Button<Paragraph<'static>>,
-    attached_direction: Location,
-    n_chars: u16,
-}
-
-impl BorderAttachedButton {
-    pub fn update(&mut self, text: String) {
-        self.n_chars = text.len() as u16;
-        self.button.content = Paragraph::new(text).centered();
-    }
-
-    pub fn resize(&self, width: u16, height: u16) -> Rect {
-        match self.attached_direction {
-            Location::SouthEast => Rect {
-                x: width - (self.n_chars + 2),
-                y: height - 3,
-                width: self.n_chars + 2,
-                height: 3,
-            },
-            Location::East(i) => Rect {
-                x: width - (self.n_chars + 2),
-                y: ((height as i16) - i) as u16,
-                width: self.n_chars + 2,
-                height: 3,
-            },
-        }
-    }
-
-    pub fn new(text: String, attached_direction: Location) -> BorderAttachedButton {
-        let n_chars = text.len() as u16;
-        let content = Paragraph::new(text);
-
-        let button = Button {
-            content,
-            titles: [None, None, None],
-            is_pressed: false,
-            is_hovered: false,
-            style: Style::new().bg(Color::Black).fg(Color::Green),
-            pressed_style: Style::new().bg(Color::Black).fg(Color::Red),
-            hovered_style: Style::new().bg(Color::Black).fg(Color::LightGreen),
-        };
-        BorderAttachedButton {
-            button,
-            attached_direction,
-            n_chars,
-        }
-    }
-}
-
-impl WidgetRef for BorderAttachedButton {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        self.button.render_ref(area, buf);
-        match self.attached_direction {
-            Location::East(_) => {
-                let cell = &mut buf[(area.right() - 1, area.top())];
-                cell.set_char('┪');
-                let cell = &mut buf[(area.right() - 1, area.bottom() - 1)];
-                cell.set_char('┩');
-            }
-            Location::SouthEast => {
-                let cell = &mut buf[(area.right() - 1, area.top())];
-                cell.set_char('┪');
-                let cell = &mut buf[(area.left(), area.bottom() - 1)];
-                cell.set_char('┺');
-            }
-        }
-        // Not sure why adding whitespace to button.content does not do this for us
-        // possibly a ratatui optimization leading to a "bug" or unexpected behavior?
-        let cell = &mut buf[(area.left() + 1, area.bottom() - 2)];
-        cell.set_char(' ');
-        let cell = &mut buf[(area.right() - 2, area.top() + 1)];
-        cell.set_char(' ');
+        buf.set_style(area, self.style);
     }
 }

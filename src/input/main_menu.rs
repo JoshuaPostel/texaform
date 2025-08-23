@@ -2,14 +2,15 @@ use crate::app::{App, AppResult};
 use crate::input::Screen;
 use crate::surface::state::Seed;
 use crate::surface::{self, AddEntityError};
-use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
+use crate::widgets::HandleInput;
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::layout::Position;
 
 use crate::ui::main_menu::MainMenu;
 
 //async fn on_select(app: &mut App) -> AppResult<()> {
-async fn on_select(app: &mut App) -> Result<(), AddEntityError> {
-    match app.main_menu.selected() {
+async fn on_select(app: &mut App, screen: MainMenu) -> Result<(), AddEntityError> {
+    match screen {
         MainMenu::NewGame => {
             // make sure random seed is new
             if matches!(app.seed, Seed::Random(_)) {
@@ -27,10 +28,10 @@ async fn on_select(app: &mut App) -> Result<(), AddEntityError> {
 }
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
+    if let Some(screen) = app.main_menu.handle_key_event(key_event) {
+        on_select(app, screen).await?;
+    }
     match key_event.code {
-        KeyCode::Up | KeyCode::Char('k') => app.main_menu.select_previous(),
-        KeyCode::Down | KeyCode::Char('j') => app.main_menu.select_next(),
-        KeyCode::Enter => on_select(app).await?,
         KeyCode::Char(x) => {
             if let Some(digit) = x.to_digit(10) {
                 app.seed.append(digit as u64)
@@ -47,21 +48,11 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         x: event.column,
         y: event.row,
     };
-    use MouseEventKind as Kind;
-    match event.kind {
-        Kind::Moved => {
-            if app.layout.main_menu.menu.contains(pos) {
-                let idx = pos.y.saturating_sub(app.layout.main_menu.menu.y);
-                app.main_menu.select(idx as usize);
-            }
-        }
-        Kind::Down(MouseButton::Left) => {
-            // TODO how to handle mouse outside of menu area?
-            if app.layout.main_menu.menu.contains(pos) {
-                on_select(app).await?;
-            }
-        }
-        _ => (),
+    if let Some(screen) = app
+        .main_menu
+        .handle_mouse(app.layout.main_menu.menu, pos, event)
+    {
+        on_select(app, screen).await?;
     }
     Ok(())
 }

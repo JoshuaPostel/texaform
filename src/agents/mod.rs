@@ -96,6 +96,7 @@ pub enum UpdateEnum {
     },
     Reply(String),
     Move(Position),
+    Research,
 }
 
 impl UpdateEnum {
