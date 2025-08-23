@@ -51,7 +51,7 @@ pub fn render(app: &App, frame: &mut Frame) {
     render_widget_clamped(frame, border, app.layout.documentation.list);
     render_widget_clamped(
         frame,
-        app.documentation.clone(),
+        &app.documentation,
         app.layout.documentation.list.inner(Margin::new(1, 1)),
     );
 

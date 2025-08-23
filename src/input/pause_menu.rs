@@ -1,9 +1,8 @@
 use crate::app::{App, AppResult};
 use crate::ui::Screen;
-use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
 use ratatui::layout::Position;
 
-use crate::utils::relative_position;
 
 use crate::ui::pause_menu::PauseMenu;
 use crate::widgets::HandleInput;
@@ -36,13 +35,14 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
     Ok(())
 }
 
-pub async fn handle_mouse_events(mouse_event: MouseEvent, app: &mut App) -> AppResult<()> {
+pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<()> {
     let pos = Position {
-        x: mouse_event.column,
-        y: mouse_event.row,
+        x: event.column,
+        y: event.row,
     };
-    if let Some(rel_pos) = relative_position(app.layout.pause_menu.menu, pos)
-        && let Some(screen) = app.pause_menu.handle_mouse_event(mouse_event, rel_pos)
+    if let Some(screen) = app
+        .pause_menu
+        .handle_mouse(app.layout.pause_menu.menu, pos, event)
     {
         on_select(app, screen);
     }

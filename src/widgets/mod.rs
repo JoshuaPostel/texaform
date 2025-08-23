@@ -1,11 +1,15 @@
 pub mod button;
+pub mod depreciated_button;
 pub mod list;
 pub mod text_box;
 
+use ratatui::layout::Rect;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::layout::Position;
+
+use crate::utils::relative_position;
 
 pub trait HandleInput {
     // in future default associated type might make this cleaner
@@ -19,6 +23,24 @@ pub trait HandleInput {
         _event: MouseEvent,
         _relative_position: Position,
     ) -> Option<Self::Output> {
+        None
+    }
+
+    // TODO could use in conjunction with `struct UI { hot, active }` approach
+    // in which case call fn on_mouse_exit(&mut self)
+    fn on_mouse_elsewhere(&mut self) {}
+
+    fn handle_mouse(
+        &mut self,
+        area: Rect,
+        pos: Position,
+        event: MouseEvent,
+    ) -> Option<Self::Output> {
+        if let Some(rel_pos) = relative_position(area, pos) {
+            return self.handle_mouse_event(event, rel_pos);
+        } else {
+            self.on_mouse_elsewhere();
+        }
         None
     }
 }
@@ -51,4 +73,3 @@ impl<T: PartialEq> DoubleClickTracker<T> {
         was_double_click
     }
 }
-

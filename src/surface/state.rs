@@ -11,6 +11,7 @@ use crate::event::Event;
 use crate::tech_tree::Tech;
 use crate::tech_tree::TechTree;
 use crate::utils::human_readable_tick_count;
+use crate::widgets::button::BorderedButton;
 
 use petgraph::graph::NodeIndex;
 
@@ -91,13 +92,25 @@ impl SurfaceState {
         let mut save_path = crate::logging::get_data_dir();
         save_path.push(name + ".texaform");
         tracing::info!("saving to: {save_path:?}");
-        let save_file = File::create(save_path.clone())?;
+        Self::save_to_path(surface, &save_path)?;
+//        let save_file = File::create(save_path.clone())?;
+//        let mut writer = BufWriter::new(save_file);
+//        tracing::info!("before save");
+//        let config = bincode::config::standard().with_limit::<1_000_000>();
+//        bincode::serde::encode_into_std_write(surface, &mut writer, config).unwrap();
+//        tracing::info!("after save");
+        Ok(save_path)
+    }
+
+    pub fn save_to_path(surface: &Surface, path: &PathBuf) -> AppResult<()> {
+        tracing::info!("saving to: {path:?}");
+        let save_file = File::create(path)?;
         let mut writer = BufWriter::new(save_file);
         tracing::info!("before save");
         let config = bincode::config::standard().with_limit::<1_000_000>();
         bincode::serde::encode_into_std_write(surface, &mut writer, config).unwrap();
         tracing::info!("after save");
-        Ok(save_path)
+        Ok(())
     }
 
     pub fn load(path: &std::path::Path) -> AppResult<SurfaceState> {
@@ -122,7 +135,8 @@ impl SurfaceState {
         for comms in self.agents.values_mut() {
             comms.init(&event_sender).await;
         }
-
+        
+        let (titles, guage) = self.game_state.tech_tree.current_research_content();
         Surface {
             version: self.version,
             x: self.x,
@@ -137,6 +151,7 @@ impl SurfaceState {
             focus: None,
             previous_command_counter: 0,
             hud: Hud::default(),
+            current_research_button: BorderedButton::new(guage).with_titles(titles),
         }
     }
 }

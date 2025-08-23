@@ -15,6 +15,8 @@ use crate::event::Event;
 
 use crate::utils::{idx_to_pos, pos_to_idx};
 
+use ratatui::widgets::Gauge;
+
 use crate::agents::dog::Dog;
 use crate::agents::fabricator::Fabricator;
 use crate::agents::hud::Hud;
@@ -22,6 +24,7 @@ use crate::agents::laser_cutter::LaserCutter;
 use crate::agents::smelter::Smelter;
 use crate::entities::shape::Shape;
 use crate::surface::Seed;
+use crate::widgets::button::BorderedButton;
 
 use crate::surface::grid::{Gent, Grid};
 use crate::surface::state::{GameState, VERSION};
@@ -179,6 +182,7 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
         focus: None,
         previous_command_counter: 0,
         hud: Hud::default(),
+        current_research_button: BorderedButton::new(Gauge::default()),
     }
 }
 
@@ -199,6 +203,7 @@ pub fn empty(event_sender: UnboundedSender<Event>) -> Surface {
         focus: None,
         hud: Hud::default(),
         previous_command_counter: 0,
+        current_research_button: BorderedButton::new(Gauge::default()),
     }
 }
 

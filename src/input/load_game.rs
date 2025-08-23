@@ -3,11 +3,10 @@ use std::path::PathBuf;
 use crate::app::{App, AppResult, LoadingState};
 use crate::surface;
 use crate::surface::state::SurfaceState;
-use crate::utils::relative_position_bordered;
 use crate::widgets::HandleInput;
-use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
-use ratatui::layout::Position;
 use crate::widgets::list::Action;
+use crossterm::event::{KeyCode, KeyEvent, MouseEvent};
+use ratatui::layout::{Position, Margin};
 
 use crate::ui::Screen;
 
@@ -62,14 +61,16 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         x: event.column,
         y: event.row,
     };
-    if let Some(rel_pos) = relative_position_bordered(app.layout.load_game.save_files, pos) {
-        match app.save_files.handle_mouse_event(event, rel_pos) {
-            Some(Action::Select(path)) => load_save_file_cached(app, &path.inner),
-            Some(Action::Choose(path)) => load(app, &path.inner).await,
-            None => (),
-        }
-    } else {
+    if app.layout.previous_screen_button.contains(pos) {
         app.save_files.hover(None);
+        return Ok(());
+    }
+    // TODO store this in layout
+    let save_files_list = app.layout.load_game.save_files.inner(Margin::new(1, 1));
+    match app.save_files.handle_mouse(save_files_list, pos, event) {
+        Some(Action::Select(path)) => load_save_file_cached(app, &path.inner),
+        Some(Action::Choose(path)) => load(app, &path.inner).await,
+        None => (),
     }
     Ok(())
 }

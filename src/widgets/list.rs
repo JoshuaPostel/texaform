@@ -7,7 +7,7 @@ use ratatui::widgets::{Widget, WidgetRef};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-use crate::widgets::{HandleInput, DoubleClickTracker};
+use crate::widgets::{DoubleClickTracker, HandleInput};
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 
 #[derive(Default, Debug, Clone)]
@@ -20,6 +20,7 @@ pub struct AlignedLine {
 
 impl WidgetRef for AlignedLine {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        // TODO store lines to be more efficent?
         if let Some(left) = &self.left {
             Line::from(left.as_str())
                 .alignment(Alignment::Left)
@@ -76,7 +77,7 @@ pub struct TextList<I, T: Display + Debug> {
     hovered_style: Style,
     double_click_tracker: DoubleClickTracker<usize>,
     // for polymorphism over HandleInput
-    handle_input_kind: PhantomData<I>
+    handle_input_kind: PhantomData<I>,
 }
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -149,7 +150,7 @@ impl<T: Display + Debug + Clone> HandleInput for ClickList<T> {
                 self.select_next();
                 None
             }
-            KeyCode::Enter => self.selected().map(|i| i.clone()),
+            KeyCode::Enter => self.selected().cloned(),
             _ => None,
         }
     }
@@ -162,7 +163,7 @@ impl<T: Display + Debug + Clone> HandleInput for ClickList<T> {
         match event.kind {
             MouseEventKind::Down(MouseButton::Left) => {
                 self.select(relative_position.y as usize);
-                self.selected().map(|i| i.clone())
+                self.selected().cloned()
             }
             MouseEventKind::Moved => {
                 self.select(relative_position.y as usize);
@@ -170,6 +171,10 @@ impl<T: Display + Debug + Clone> HandleInput for ClickList<T> {
             }
             _ => None,
         }
+    }
+
+    fn on_mouse_elsewhere(&mut self) {
+        self.hover(None);
     }
 }
 
@@ -215,12 +220,7 @@ impl<I, T: Display + Debug + Ord + Eq> TextList<I, T> {
 }
 
 impl<I, T: Display + Debug> TextList<I, T> {
-    fn new(
-        items: Vec<T>,
-        style: Style,
-        selected_style: Style,
-        hovered_style: Style,
-    ) -> Self {
+    fn new(items: Vec<T>, style: Style, selected_style: Style, hovered_style: Style) -> Self {
         let lines = items
             .iter()
             .map(|i| AlignedLine::from(i.to_string()).style(style))
@@ -330,8 +330,8 @@ impl<I, T: Display + Debug> TextList<I, T> {
     }
 }
 
-impl<I, T: Display + Debug> Widget for TextList<I, T> {
-    fn render(self, area: Rect, buf: &mut Buffer)
+impl<I, T: Display + Debug> WidgetRef for TextList<I, T> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer)
     where
         Self: Sized,
     {

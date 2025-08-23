@@ -6,9 +6,9 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
-use crate::ui::{center, render_widget_clamped};
-use crate::widgets::list::{ClickList, AlignedLine};
 use crate::app::App;
+use crate::ui::{center, render_widget_clamped};
+use crate::widgets::list::{AlignedLine, ClickList};
 
 #[derive(Debug, Default)]
 pub struct PauseMenuLayout {
@@ -64,5 +64,5 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     render_widget_clamped(frame, block, app.layout.whole_screen());
 
-    render_widget_clamped(frame, app.pause_menu.clone(), app.layout.pause_menu.menu);
+    render_widget_clamped(frame, &app.pause_menu, app.layout.pause_menu.menu);
 }

@@ -116,7 +116,7 @@ impl Fabricator {
                             .remove_content(&tech.cost)
                             .expect("checked previously");
                         game_state.progress_current_tech();
-                        UpdateEnum::okay()
+                        UpdateEnum::Research
                     } else {
                         UpdateEnum::reply(Reply::ERRR("insufficent materials".to_string()))
                     }

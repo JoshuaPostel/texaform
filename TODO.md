@@ -37,15 +37,14 @@ x >x
   - agents list should be implemented like the other lists
 
 ## bugs
-- [ ] focus on entity > dog picks entity > focus shoud `INTERNAL_DEV`
+- [ ] focus on entity > dog picks entity > focus shoud ???
 - [ ] load game starts at top left (0, 0)
 - [ ] why is there a delay connecting to agents?
 
 ## low priority
-- [ ] try out PhantomType for GridPosition and FramePosition
-- [ ] imple HandleInput for all widgets
-  - [ ] list
-  - [ ] buttons
+- [ ] update ratatui version and migrate from `buf.get_mut()` to `buf.get_cell()`
+- [ ] should widgets store a reference to its associated area (Rect)?
+- [ ] PhantomType for GridPosition and FramePosition
 - [ ] use TextList for agent list
 - [ ] implement offset for TextList (when not all items can fit in UI)
 - [ ] surface generation should garentee minimum amount of each resource close to starting area
@@ -65,9 +64,9 @@ x >x
   - [ ] agent list
 - [ ] input/surface on click and drag select all entites in square and summarize / list them out in info section
 - [ ] async game saving / in the background
-- [ ] ability to manually disconnect agent from TUI?
 
 ## Future
+- [ ] set up a benchmark to test/understand how long a single frame draw takes (on each Screen)
 - [ ] nail down render rate / tick rate / annimation rate
   - [ ] can we have a speed setting (i.e. time between commands accepted by agent)?
 - [ ] fog of war
@@ -84,16 +83,12 @@ x >x
 * you remote control various robots operating on a remote planetary body
 * goal is to teaform and bring life to the planet
 * mix of factorio, advent of code, and exapunks
-
-## Idea
 * the time and power consumption of robots should incentivize efficent robots
-* tradeoff between robot capability and price
-* need good diagnostics, logs, and playback to make it an enjoyable game
+
+* do we need good diagnostics, logs, and playback to make it an enjoyable game?
 
 
 ### later?
-
-- [ ] make info section resizeable
 
 - [ ] tick rate
   - [x] playtime tracker
@@ -118,20 +113,9 @@ x >x
     - test out with very large `tick_update_mills`
 
 
-### tasks:
-- [ ] think through tick/update time
-  * discrete step based
-    * how small of a timestep?
-      * 60 steps a second like factorio?
-      * 1 setp a second?
-
-
 - [ ] open PR documenting panic of https://docs.rs/ratatui/latest/src/ratatui/buffer/buffer.rs.html#99-109
   - [ ] what are the implications of `debug_assert!` in `index_of`? What happens in --release when bad index?
 
-- [ ] update ratatui version and migrate from `buf.get_mut()` to `buf.get_cell()`
-
-- [ ] implement collapsed borders: https://ratatui.rs/recipes/layout/collapse-borders/
 
 * create pixle animations via blender/game engine
   * e.g. https://deep-fold.itch.io/space-background-generator https://github.com/Deep-Fold

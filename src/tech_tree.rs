@@ -8,6 +8,9 @@ use petgraph::graph::NodeIndex;
 use serde::{Deserialize, Serialize};
 
 use ratatui::layout::{Constraint, Flex, Layout, Margin, Position, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::Gauge;
+
 use strum_macros;
 
 use crate::entities::Entity;
@@ -413,6 +416,45 @@ impl TechTree {
         }
 
         edge_layouts
+    }
+
+    pub fn current_research_content(&self) -> ([Option<String>; 3], Gauge<'static>) {
+        match self.researching() {
+            None => {
+                let label = if self.everything_researched {
+                    "All research complete"
+                } else {
+                    "Select a technology"
+                };
+                let paragraph = Gauge::default()
+                    .style(Style::default().fg(Color::Green).bg(Color::Black))
+                    .label(label);
+                let titles = [
+                    Some("Researching: Nothing".to_string()),
+                    None,
+                    Some("[T]".to_string()),
+                ];
+                (titles, paragraph)
+            }
+            Some(tech) => {
+                let guage = Gauge::default()
+                    .gauge_style(Style::default().fg(Color::Green).bg(Color::Black))
+                    .label(format!(
+                        "{}/{}",
+                        tech.progress_numerator, tech.progress_denominator
+                    ))
+                    .percent(
+                        (100.0 * f64::from(tech.progress_numerator)
+                            / f64::from(tech.progress_denominator)) as u16,
+                    );
+                let titles = [
+                    Some(format!("Researching: {}", tech.kind)),
+                    None,
+                    Some("[T]".to_string()),
+                ];
+                (titles, guage)
+            }
+        }
     }
 }
 

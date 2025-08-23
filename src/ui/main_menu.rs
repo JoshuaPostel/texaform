@@ -7,11 +7,11 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
+use crate::app::App;
 use crate::effects::Effects;
 use crate::surface::state::Seed;
 use crate::ui::{AppLayout, center, render_effect_clamped, render_widget_clamped};
-use crate::widgets::list::{ClickList, AlignedLine};
-use crate::app::App;
+use crate::widgets::list::{AlignedLine, ClickList};
 
 use std::time::Duration;
 
@@ -93,7 +93,7 @@ pub fn render(app: &App, frame: &mut Frame) {
         .style(Style::default().fg(Color::Green).bg(Color::Black));
 
     render_widget_clamped(frame, logo, app.layout.whole_screen());
-    render_widget_clamped(frame, app.main_menu.clone(), app.layout.main_menu.menu);
+    render_widget_clamped(frame, &app.main_menu, app.layout.main_menu.menu);
     render_set_seed(app, frame);
 }
 

@@ -1,14 +1,13 @@
 use crate::app::{App, AppResult};
-use crate::utils::{relative_position, relative_position_bordered};
-use crate::widgets::text_box::Action as TextBoxAction;
 use crate::widgets::list::Action as ListAction;
+use crate::widgets::text_box::Action as TextBoxAction;
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
-use ratatui::layout::Position;
+use ratatui::layout::{Margin, Position};
 
 use crate::input::load_game::{load_save_file, load_save_file_cached};
 use crate::surface::state::SurfaceState;
 use crate::widgets::HandleInput;
-use crate::widgets::button::{BorderAttachedButton, Location};
+use crate::widgets::depreciated_button::{BorderAttachedButton, Location};
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     match app.save_screen_text_box.handle_key_event(key_event) {
@@ -31,8 +30,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
         Some(ListAction::Select(path)) => {
             app.save_screen_text_box.set_content(path.to_string());
             load_save_file_cached(app, &path.inner)
+        }
+        Some(ListAction::Choose(path)) => {
+            SurfaceState::save_to_path(&app.surface, &path.inner)?;
+            load_save_file(app, &path.inner)
         },
-        Some(ListAction::Choose(path)) => load_save_file(app, &path.inner),
         None => (),
     }
     match key_event.code {
@@ -49,77 +51,38 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
         x: event.column,
         y: event.row,
     };
-    // TODO handle previous_screen button too
     app.save_button.button.is_hovered = app.layout.save_game.save_button.contains(pos);
     if app.save_button.button.is_hovered {
+        if event.kind == MouseEventKind::Down(MouseButton::Left)
+            && let Some(path) = app.save_files.selected()
+        {
+            SurfaceState::save_to_path(&app.surface, &path.inner)?;
+            load_save_file(app, &path.clone().inner);
+            app.save_screen_text_box.set_content("".to_string());
+        }
         app.save_files.hover(None);
         return Ok(());
     }
-    if let Some(rel_pos) = relative_position(app.layout.save_game.save_file_input, pos) {
-        app.save_screen_text_box.handle_mouse_event(event, rel_pos);
-    }
-    if let Some(rel_pos) = relative_position_bordered(app.layout.save_game.save_files, pos) {
-        match app.save_files.handle_mouse_event(event, rel_pos) {
-            Some(ListAction::Select(path)) => {
-                app.save_screen_text_box.set_content(path.to_string());
-                load_save_file_cached(app, &path.inner)
-            },
-            Some(ListAction::Choose(path)) => load_save_file(app, &path.inner),
-            None => (),
-        }
-    } else {
+    if app.layout.previous_screen_button.contains(pos) {
         app.save_files.hover(None);
+        return Ok(());
     }
-    // TODO handle button hover
+    app.save_screen_text_box
+        .handle_mouse(app.layout.save_game.save_file_input, pos, event);
 
-
-//    use MouseEventKind as Kind;
-//    match event.kind {
-//        Kind::Moved => {
-//            let pos = Position {
-//                x: event.column,
-//                y: event.row,
-//            };
-//            if app.layout.save_game.save_button.contains(pos) {
-//                app.save_button.button.is_hovered = true;
-//                app.save_files.hover(None);
-//            } else if app.layout.save_game.save_files.contains(pos) {
-//                let idx = pos
-//                    .y
-//                    .saturating_sub(1)
-//                    .saturating_sub(app.layout.save_game.save_files.y);
-//                app.save_files.hover(Some(idx as usize));
-//            } else {
-//                app.save_files.hover(None);
-//            }
-//        }
-//        Kind::Down(MouseButton::Left) => {
-//            if let Some(rel_pos) = relative_position(app.layout.save_game.save_file_input, pos) {
-//                app.save_screen_text_box.handle_mouse_event(event, rel_pos);
-//            } else {
-//                if app.layout.save_game.save_button.contains(pos) {
-//                    if let Some(display_pathbuf) = app.save_files.selected()
-//                        && let Some(msg) = display_pathbuf.inner.file_name()
-//                    {
-//                        let save_path =
-//                            SurfaceState::save(&app.surface, msg.to_string_lossy().to_string())?;
-//                        load_save_file(app, &save_path);
-//                        app.save_files.insert(save_path.into());
-//                    }
-//                } else if app.layout.save_game.save_files.contains(pos) {
-//                    let idx = pos
-//                        .y
-//                        .saturating_sub(1)
-//                        .saturating_sub(app.layout.save_game.save_files.y);
-//                    app.save_files.select(idx as usize);
-//                    if let Some(file) = app.save_files.selected() {
-//                        app.save_screen_text_box.set_content(file.to_string());
-//                        load_selected_save_file(app);
-//                    }
-//                }
-//            }
-//        }
-//        _ => (),
-//    }
+    // TODO store this in layout
+    let save_files_list = app.layout.save_game.save_files.inner(Margin::new(1, 1));
+    match app.save_files.handle_mouse(save_files_list, pos, event) {
+        Some(ListAction::Select(path)) => {
+            app.save_screen_text_box.set_content(path.to_string());
+            load_save_file_cached(app, &path.inner)
+        }
+        Some(ListAction::Choose(path)) => {
+            SurfaceState::save_to_path(&app.surface, &path.inner)?;
+            load_save_file(app, &path.inner);
+            app.save_screen_text_box.set_content("".to_string());
+        },
+        None => (),
+    }
     Ok(())
 }
