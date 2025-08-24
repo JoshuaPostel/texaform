@@ -131,6 +131,10 @@ impl<T: Display + Debug + Clone> HandleInput for DoubleClickList<T> {
             _ => None,
         }
     }
+
+    fn on_mouse_elsewhere(&mut self) {
+        self.hover(None);
+    }
 }
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -220,7 +224,7 @@ impl<I, T: Display + Debug + Ord + Eq> TextList<I, T> {
 }
 
 impl<I, T: Display + Debug> TextList<I, T> {
-    fn new(items: Vec<T>, style: Style, selected_style: Style, hovered_style: Style) -> Self {
+    pub fn new(items: Vec<T>, style: Style, selected_style: Style, hovered_style: Style) -> Self {
         let lines = items
             .iter()
             .map(|i| AlignedLine::from(i.to_string()).style(style))
@@ -262,6 +266,11 @@ impl<I, T: Display + Debug> TextList<I, T> {
             double_click_tracker: DoubleClickTracker::default(),
             handle_input_kind: PhantomData,
         }
+    }
+
+    pub fn push(&mut self, item: T, line: AlignedLine) {
+        self.items.push(item);
+        self.lines.push(line);
     }
 
     pub fn select_previous(&mut self) {

@@ -12,6 +12,7 @@ use crate::tech_tree::Tech;
 use crate::tech_tree::TechTree;
 use crate::utils::human_readable_tick_count;
 use crate::widgets::button::BorderedButton;
+use crate::widgets::list::DoubleClickList;
 
 use petgraph::graph::NodeIndex;
 
@@ -137,12 +138,18 @@ impl SurfaceState {
         }
         
         let (titles, guage) = self.game_state.tech_tree.current_research_content();
+        let mut agents_list = DoubleClickList::default_style(vec![]);
+        for (port, comms) in &self.agents {
+            agents_list
+                .push(*port, format!("{port} {}", comms.entity.to_string()).into());
+        }
         Surface {
             version: self.version,
             x: self.x,
             y: self.y,
             grid: self.grid,
             agents: self.agents,
+            agents_list,
             power: self.power,
             game_state: self.game_state,
             victory_stats: self.victory_stats,

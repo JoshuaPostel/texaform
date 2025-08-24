@@ -1,6 +1,6 @@
 use ratatui::Frame;
 use ratatui::layout::{Position, Rect};
-use ratatui::style::Color;
+use ratatui::style::{Color, Style};
 use ratatui::widgets::Gauge;
 
 use tachyonfx::{Effect, fx};
@@ -18,6 +18,7 @@ use crate::tech_tree::TechTree;
 use crate::ui::render_effect_clamped;
 use crate::utils::{idx_to_pos, pos_to_idx};
 use crate::widgets::button::BorderedButton;
+use crate::widgets::list::{AlignedLine, DoubleClickList};
 
 use thiserror::Error;
 
@@ -107,6 +108,13 @@ pub struct Surface {
     // more specific to this field
     /// address to grid position mapping
     pub agents: BTreeMap<usize, Comms>,
+
+    #[serde(skip)]
+    pub agents_list: DoubleClickList<usize>,
+
+    #[serde(skip)]
+    pub focus: Option<Focus>,
+
     pub power: Power,
     pub game_state: GameState,
     pub victory_stats: Option<VictoryStats>,
@@ -116,9 +124,6 @@ pub struct Surface {
 
     #[serde(skip)]
     pub hud: Hud,
-
-    #[serde(skip)]
-    pub focus: Option<Focus>,
 
     #[serde(skip)]
     pub previous_command_counter: u8,
@@ -422,6 +427,8 @@ impl Surface {
                         .and_modify(|count| *count += 1)
                         .or_insert(1);
                     let port = comms.port;
+                    self.agents_list
+                        .push(port, format!("{port} {}", comms.entity.to_string()).into());
                     self.agents.insert(port, comms);
                     for pos in rect.positions().skip(1) {
                         self.grid
@@ -453,6 +460,8 @@ impl Surface {
                             .and_modify(|count| *count += 1)
                             .or_insert(1);
                         let port = comms.port;
+                        self.agents_list
+                            .push(port, format!("{port} {}", comms.entity.to_string()).into());
                         self.agents.insert(port, comms);
                         Ok(port)
                     }
@@ -724,6 +733,13 @@ impl Surface {
             tutorial_state: Tutorial::Start,
             stats: GameStats::new(seed, research_count),
         };
+        let mut agents_list = DoubleClickList::new(
+            vec![],
+            Style::default(),
+            Style::new().fg(Color::Black).bg(Color::Magenta),
+            Style::new().fg(Color::Black).bg(Color::DarkGray),
+        );
+        agents_list.push(3333, "3333 HUD".to_string().into());
 
         let mut surface = Surface {
             version: VERSION,
@@ -731,6 +747,7 @@ impl Surface {
             x,
             y,
             agents: BTreeMap::new(),
+            agents_list,
             event_sender,
             game_state,
             victory_stats: None,

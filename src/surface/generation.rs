@@ -14,6 +14,7 @@ use crate::entities::Entity;
 use crate::event::Event;
 
 use crate::utils::{idx_to_pos, pos_to_idx};
+use crate::widgets::list::DoubleClickList;
 
 use ratatui::widgets::Gauge;
 
@@ -174,6 +175,7 @@ pub fn perlin(event_sender: UnboundedSender<Event>) -> Surface {
         x: 0,
         y: 0,
         agents: BTreeMap::new(),
+        agents_list: DoubleClickList::default_style(vec![]),
         event_sender,
         game_state: GameState::default(),
         victory_stats: None,
@@ -195,6 +197,7 @@ pub fn empty(event_sender: UnboundedSender<Event>) -> Surface {
         x: 0,
         y: 0,
         agents: BTreeMap::new(),
+        agents_list: DoubleClickList::default_style(vec![]),
         event_sender,
         game_state: GameState::default(),
         victory_stats: None,

@@ -280,8 +280,30 @@ fn render_info(app: &App, frame: &mut Frame) {
             .render(app.layout.surface.info, buf),
     }
 }
-
 fn render_agents_list(app: &App, frame: &mut Frame) {
+
+    let border = Block::bordered()
+        .title("Agents")
+        .style(Style::new().bg(Color::Black).fg(Color::Green));
+    render_widget_clamped(frame, border, app.layout.surface.agents);
+    //    match app.surface.focus {
+    //        Some(Focus::Agent(address)) => {
+    //            let adrs: Vec<usize> = app.surface.agents.keys().cloned().collect();
+    //            if let Some(idx) = adrs.iter().position(|&a| a == address) {
+    //                state.select(Some(idx));
+    //            }
+    //        }
+    //        _ => state.select(None),
+    //    }
+    // TODO on Focus change, update agents_list
+    render_widget_clamped(
+        frame,
+        &app.surface.agents_list,
+        app.layout.surface.agents.inner(Margin::new(1, 1)),
+    );
+}
+
+fn render_agents_list_old(app: &App, frame: &mut Frame) {
     let mut agents: Vec<String> = vec![];
     for (port, comms) in app.surface.agents.iter() {
         if let Some(pos) = comms.position {

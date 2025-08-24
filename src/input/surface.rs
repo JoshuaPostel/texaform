@@ -1,6 +1,7 @@
 use crate::app::{App, AppResult, InputMode};
+use crate::widgets::list::Action as ListAction;
 use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
-use ratatui::layout::Position;
+use ratatui::layout::{Margin, Position};
 use tracing::*;
 
 use rodio::{Decoder, OutputStream, Sink};
@@ -11,7 +12,7 @@ use crate::surface::grid::Gent;
 use crate::surface::{Focus, tutorial::Tutorial};
 use crate::ui::Screen;
 use crate::widgets::HandleInput;
-use crate::widgets::text_box::Action;
+use crate::widgets::text_box::Action as TextBoxAction;
 
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     let pcc = app.surface.previous_command_counter;
@@ -39,7 +40,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<
             }
             _ => {
                 if let Some(comms) = focused_comms
-                    && let Some(Action::Submit(msg)) = comms.text_box.handle_key_event(key_event)
+                    && let Some(TextBoxAction::Submit(msg)) = comms.text_box.handle_key_event(key_event)
                 {
                     let port = comms.port;
                     app.surface.update_agent_manual(&port, msg).await;
@@ -107,6 +108,13 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
             return Ok(());
         }
     }
+    let agents_list = app.layout.surface.agents.inner(Margin::new(1, 1));
+    match app.surface.agents_list.handle_mouse(agents_list, pos, event) {
+        Some(ListAction::Select(port)) | Some(ListAction::Choose(port)) => {
+            app.surface.focus = Some(Focus::Agent(port))
+        }
+        _ => (),
+    }
     if app.surface.current_research_button.handle_mouse(app.layout.surface.tech, pos, event).is_some() {
         app.set_screen(Screen::TechTree);
     }
@@ -165,16 +173,6 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> AppResult<
                     Some(Gent::Empty) => app.surface.focus = Some(Focus::Position(grid_pos)),
                     Some(_) => tracing::info!("Some(_) branch"),
                     None => tracing::info!("None branch"),
-                }
-            }
-            if app.layout.surface.agents.contains(pos) {
-                let index = (pos.y - app.layout.surface.agents.y)
-                    .checked_sub(1)
-                    .map(usize::from);
-                if let Some(idx) = index
-                    && let Some(port) = app.surface.agents.keys().nth(idx)
-                {
-                    app.surface.focus = Some(Focus::Agent(*port));
                 }
             }
         }

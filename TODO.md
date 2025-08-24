@@ -1,5 +1,9 @@
 # TEXAFORM
 
+## Left off at
+- on Focus change, update agents_list
+- ui/surface.rs:299
+
 ## playthrough
 - [x] smelter
 - [x] solar
