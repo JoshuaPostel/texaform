@@ -96,6 +96,79 @@ pub enum AddEntityError {
     OutOfBounds,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Agents {
+    agents: BTreeMap<usize, Comms>,
+
+    #[serde(skip)]
+    agents_list: DoubleClickList<usize>,
+
+    // TODO not yet sure if we want this here or at the surface level
+    #[serde(skip)]
+    focus: Option<Focus>,
+}
+
+impl Agents {
+    //    pub fn add_agent(&mut self, port: usize, comms: Comms) {
+    //        self.agents_list
+    //            .push(port, format!("{port} {}", comms.entity.to_string()).into());
+    //        self.agents.insert(port, comms);
+    //    }
+
+    pub fn delete_agent(&mut self, port: usize) {
+        if self.focus == Some(Focus::Agent(port)) {
+            self.focus = None;
+        }
+        self.agents.remove(&port);
+    }
+
+    pub async fn add_agent(
+        &mut self,
+        event_sender: UnboundedSender<Event>,
+        rect: Rect,
+        entity: Entity,
+    ) -> usize {
+        let port = self.next_available_port();
+        let comms = Comms::new(port, event_sender, Some(rect), entity).await;
+        self.agents_list
+            .push(port, format!("{port} {}", comms.entity.to_string()).into());
+        self.agents.insert(port, comms);
+        port
+    }
+
+    pub fn focused_agent_port(&self) -> Option<usize> {
+        match self.focus {
+            Some(Focus::Agent(port)) => Some(port),
+            _ => None,
+        }
+    }
+
+    pub fn focused_agent_comms(&self) -> Option<&Comms> {
+        self.focused_agent_port()
+            .and_then(|port| self.agents.get(&port))
+    }
+
+    pub fn focused_agent_comms_mut(&mut self) -> Option<&mut Comms> {
+        self.focused_agent_port()
+            .and_then(|port| self.agents.get_mut(&port))
+    }
+
+    pub fn agent_port(&self, pos: &Position) -> Option<usize> {
+        self.agents
+            .iter()
+            .find(|(_, v)| v.location.map(|l| l.contains(*pos)).unwrap_or(false))
+            .map(|(k, _)| *k)
+    }
+
+    pub fn agent_position(&self, port: &usize) -> Option<Position> {
+        self.agents.get(port).and_then(|comms| comms.position)
+    }
+
+    pub fn next_available_port(&self) -> usize {
+        *self.agents.keys().max().unwrap_or(&3332) + 1
+    }
+}
+
 #[serde_as]
 #[derive(Serialize)]
 pub struct Surface {
@@ -107,13 +180,14 @@ pub struct Surface {
     // TODO make an abstraction on top agents for modularity and making get_mut methods
     // more specific to this field
     /// address to grid position mapping
-    pub agents: BTreeMap<usize, Comms>,
-
-    #[serde(skip)]
-    pub agents_list: DoubleClickList<usize>,
-
-    #[serde(skip)]
-    pub focus: Option<Focus>,
+    //    pub agents: BTreeMap<usize, Comms>,
+    //
+    //    #[serde(skip)]
+    //    pub agents_list: DoubleClickList<usize>,
+    //
+    //    #[serde(skip)]
+    //    pub focus: Option<Focus>,
+    pub agents: Agents,
 
     pub power: Power,
     pub game_state: GameState,
@@ -143,31 +217,16 @@ impl std::fmt::Debug for Surface {
 }
 
 impl Surface {
-    pub fn focused_agent_port(&self) -> Option<usize> {
-        match self.focus {
-            Some(Focus::Agent(port)) => Some(port),
-            _ => None,
-        }
-    }
-
     pub fn focused_agent(&self) -> Option<&dyn Agent> {
-        self.focused_agent_port()
+        self.agents
+            .focused_agent_port()
             .and_then(|port| self.get_agent(&port).map(|v| &**v))
     }
 
     pub fn focused_agent_mut(&mut self) -> Option<&mut Box<dyn Agent>> {
-        self.focused_agent_port()
+        self.agents
+            .focused_agent_port()
             .and_then(|port| self.get_mut_agent(&port))
-    }
-
-    pub fn focused_agent_comms(&self) -> Option<&Comms> {
-        self.focused_agent_port()
-            .and_then(|port| self.agents.get(&port))
-    }
-
-    pub fn focused_agent_comms_mut(&mut self) -> Option<&mut Comms> {
-        self.focused_agent_port()
-            .and_then(|port| self.agents.get_mut(&port))
     }
 
     pub fn tick(&mut self) {
@@ -179,6 +238,8 @@ impl Surface {
         }
         self.game_state.stats.tick_count += 1;
         let positions: Vec<Position> = self
+            .agents
+            // TODO might make private in another mod
             .agents
             .values()
             .filter_map(|comms| comms.position)
@@ -193,7 +254,8 @@ impl Surface {
         self.power.update(solar_irradiance);
 
         let mut agents_to_delete = vec![];
-        for comms in self.agents.values() {
+        // TODO might make private in another mod
+        for comms in self.agents.agents.values() {
             if let Some(pos) = comms.position
                 && let Some(Gent::Age(age)) = self.grid.get(&pos)
                 && age.integrity() == 0
@@ -249,10 +311,6 @@ impl Surface {
         }
     }
 
-    pub fn next_available_port(&self) -> usize {
-        *self.agents.keys().max().unwrap_or(&3332) + 1
-    }
-
     pub fn frame_position(&self, grid_position: &Position) -> Option<Position> {
         let x = grid_position.x.checked_sub(self.x as u16);
         let y = grid_position.y.checked_sub(self.y as u16);
@@ -275,7 +333,8 @@ impl Surface {
         area: Rect,
         prev_tick: core::time::Duration,
     ) {
-        for comms in self.agents.values() {
+        // TODO might make private in another mod
+        for comms in self.agents.agents.values() {
             if let Some(pos) = comms.position
                 && let Some(pos) = self.frame_position(&pos)
                 && let Some(Gent::Age(agent)) = self.grid.get_mut(&pos)
@@ -419,17 +478,14 @@ impl Surface {
                 };
                 if self.grid.buildable(rect) {
                     self.grid.insert(pos, Gent::Age(agent));
-                    let comms = Comms::new(self, Some(rect), entity).await;
                     self.game_state
                         .stats
                         .agent_count
                         .entry(entity.to_string())
                         .and_modify(|count| *count += 1)
                         .or_insert(1);
-                    let port = comms.port;
-                    self.agents_list
-                        .push(port, format!("{port} {}", comms.entity.to_string()).into());
-                    self.agents.insert(port, comms);
+                    let event_sender = self.event_sender.clone();
+                    let port = self.agents.add_agent(event_sender, rect, entity).await;
                     for pos in rect.positions().skip(1) {
                         self.grid
                             .insert(&pos, Gent::Large(idx_to_pos(idx, GRID_SIZE)))
@@ -452,17 +508,14 @@ impl Surface {
                             width: 1,
                             height: 1,
                         };
-                        let comms = Comms::new(self, Some(location), entity).await;
                         self.game_state
                             .stats
                             .agent_count
                             .entry(entity.to_string())
                             .and_modify(|count| *count += 1)
                             .or_insert(1);
-                        let port = comms.port;
-                        self.agents_list
-                            .push(port, format!("{port} {}", comms.entity.to_string()).into());
-                        self.agents.insert(port, comms);
+                        let event_sender = self.event_sender.clone();
+                        let port = self.agents.add_agent(event_sender, location, entity).await;
                         Ok(port)
                     }
                     _ => {
@@ -475,10 +528,8 @@ impl Surface {
     }
 
     pub fn delete_agent(&mut self, port: &usize) {
-        if self.focus == Some(Focus::Agent(*port)) {
-            self.focus = None;
-        }
-        if let Some(pos) = self.agents.get(port).and_then(|comms| comms.position)
+        //if let Some(pos) = self.agents.get(port).and_then(|comms| comms.position)
+        if let Some(pos) = self.agents.agent_position(port)
             && let Some(agent) = self.grid.pop(&pos)
         {
             let area = match agent.entity().footprint() {
@@ -499,13 +550,18 @@ impl Surface {
                 self.grid.insert(&pos, Gent::Empty);
             }
         }
-        self.agents.remove(port);
+        self.agents.delete_agent(port);
+//        if self.focus == Some(Focus::Agent(*port)) {
+//            self.focus = None;
+//        }
+//        self.agents.remove(port);
     }
 
     // TODO is a borrowed box nessisary?
     #[allow(clippy::borrowed_box)]
     pub fn get_agent(&self, port: &usize) -> Option<&Box<dyn Agent>> {
-        if let Some(pos) = self.agents.get(port).and_then(|comms| comms.position) {
+        //if let Some(pos) = self.agents.get(port).and_then(|comms| comms.position) {
+        if let Some(pos) = self.agents.agent_position(port) {
             match &self.grid.get(&pos) {
                 Some(Gent::Age(agent)) => return Some(agent),
                 _ => return None,

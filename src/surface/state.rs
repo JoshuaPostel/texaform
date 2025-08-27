@@ -26,7 +26,7 @@ use serde_with::serde_as;
 
 use crate::surface::grid::Grid;
 use crate::surface::tutorial::Tutorial;
-use crate::surface::{Power, Surface};
+use crate::surface::{Power, Surface, Agents};
 
 // order of fields matters for saving/loading
 #[serde_as]
@@ -37,7 +37,8 @@ pub struct SurfaceState {
     y: usize,
     pub grid: Grid,
 
-    pub agents: BTreeMap<usize, Comms>,
+    //pub agents: BTreeMap<usize, Comms>,
+    pub agents: Agents,
     pub power: Power,
     pub game_state: GameState,
     pub victory_stats: Option<VictoryStats>,

@@ -273,10 +273,13 @@ impl Comms {
             .expect("reply_sender inited properly")
     }
 
-    pub async fn new(surface: &Surface, location: Option<Rect>, agent_kind: Entity) -> Comms {
-        let port = surface.next_available_port();
-        tracing::info!("here: {port}");
-        let event_sender = surface.event_sender.clone();
+    pub async fn new(
+        port: usize,
+        event_sender: UnboundedSender<Event>,
+        location: Option<Rect>,
+        agent_kind: Entity,
+    ) -> Comms {
+        tracing::info!("new comms at: {port}");
         let (reply_sender, drop_handle): (Sender<String>, DropHandle) =
             spawn_handler(port, event_sender).await.expect("TODO");
         let (position, location) = match location {
