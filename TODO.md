@@ -1,5 +1,7 @@
 # TEXAFORM
 
+- [ ] update to ratatui 0.30
+
 ## playthrough
 - [x] smelter
 - [x] solar
